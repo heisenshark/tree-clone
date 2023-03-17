@@ -14,8 +14,10 @@ const treeRouter = createTRPCRouter({
   }
   ),
   findOne: publicProcedure.input(
-    z.object({link:z.string().nonempty().describe})
-  ).query()
+    z.object({link:z.string().nonempty().regex(new RegExp("^[a-zA-Z0-9]+$"))})
+  ).query(({ctx,input})=>{
+    ctx.prisma.tree.findFirst()
+  })
   // updateOne:undefined,
 });
 export const exampleRouter = createTRPCRouter({
