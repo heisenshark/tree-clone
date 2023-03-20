@@ -7,6 +7,7 @@ import {
   publicProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
+import { parseTreeString } from "~/shared"
 
 const linkValidString = z
   .string()
@@ -63,6 +64,20 @@ const treeRouter = createTRPCRouter({
       });
       return res;
     }),
+  findOneJSON: publicProcedure
+    .input(z.object({ link: linkValidString }))
+    .query(async ({ ctx, input }) => {
+      const res = await ctx.prisma.tree.findFirst({
+        where: {
+          link: {
+            equals: input.link,
+          },
+        },
+      });
+      console.log(res?.content);
+      
+      return parseTreeString(res?.content);
+    }),
   getUserTrees: protectedProcedure.query(({ ctx }) => {
     return ctx.prisma.tree.findMany({
       where: {
@@ -86,7 +101,7 @@ const treeRouter = createTRPCRouter({
       });
       if (!tree) throw new TRPCError({ code:"BAD_REQUEST",message:"tree does not exist"});
       if (tree.userId!= ctx.session.user.id) throw new TRPCError({ code:"UNAUTHORIZED",message:"tree is not owned by current user"});
-      
+
       if(input.newLink!=input.link && await findTree(input.newLink, ctx.prisma)) throw new TRPCError({ code:"BAD_REQUEST",message:"new name is reserved"});
 
       tree.content = input.newContent;
