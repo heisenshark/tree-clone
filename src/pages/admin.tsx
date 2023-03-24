@@ -11,7 +11,7 @@ import { Cross2Icon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
 type Inputs = {
-  example: string;
+  link: string;
   exampleRequired: string;
 };
 
@@ -28,8 +28,8 @@ const Admin = () => {
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     console.log("adding stuff\n", data);
     const xd = add.mutate({
-      link: data.example,
-      content: data.exampleRequired,
+      link: data.link,
+      content: "[]",
     });
     console.log(xd);
   };
@@ -50,19 +50,15 @@ const Admin = () => {
   }, [add.error]);
   return (
     <div>
+      <h1 className="mx-10 my-4 text-3xl">Add tree</h1>
       <div className="mx-10 mt-4">
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* register your input into the hook by invoking the "register" function */}
           <input
             className="w-full rounded border border-gray-300 bg-white py-1 px-3 text-base leading-8 text-gray-700 outline-none transition-colors duration-200 ease-in-out focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            defaultValue="test"
-            {...register("example")}
-          />
-
-          {/* include validation with required or other standard HTML validation rules */}
-          <input
-            className="w-full rounded border border-gray-300 bg-white py-1 px-3 text-base leading-8 text-gray-700 outline-none transition-colors duration-200 ease-in-out focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            {...register("exampleRequired", { required: true })}
+            placeholder="/link"
+            required
+            {...register("link")}
           />
           {/* errors will return when field validation fails  */}
           {errors.exampleRequired && <span>This field is required</span>}

@@ -45,7 +45,7 @@ export default function Edit() {
     link?: string;
   }>();
 
-  const onSubmit: SubmitHandler<Inputs> = (data) => {
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
     if (!edittedTree.data) return;
     updateTree.mutate({
       link: edittedTree.data?.link,
@@ -95,13 +95,6 @@ export default function Edit() {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col"
       >
-        <textarea
-          cols={90}
-          rows={10}
-          defaultValue={edittedTree.data.content}
-          required
-          {...register("newContent")}
-        ></textarea>
         <input
           type="text"
           {...register("newLink")}

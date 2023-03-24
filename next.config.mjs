@@ -16,6 +16,18 @@ const config = {
    *
    * @see https://github.com/vercel/next.js/issues/41980
    */
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com',
+        port: '',
+        pathname: '/avatars/*',
+      },
+    ],
+    domains: ['cdn.discordapp.com'],
+    formats: ['image/avif', 'image/webp'],
+  },
   experimental: { appDir: true },
   // i18n: {
   //   locales: ["en"],

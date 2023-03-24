@@ -1,10 +1,10 @@
 import { type AppType } from "next/app";
 import { type Session } from "next-auth";
-import { SessionProvider } from "next-auth/react";
-
+import { SessionProvider, useSession } from "next-auth/react";
 import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
+import TopBar from "~/components/topbar";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -12,7 +12,10 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
+      <div className="h-screen flex flex-col">
+      <TopBar></TopBar>
       <Component {...pageProps} />
+      </div>
     </SessionProvider>
   );
 };

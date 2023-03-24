@@ -14,7 +14,15 @@ export default function Something() {
     {
       link: arg instanceof Array<string> ? "" : arg,
     },
-    { enabled: !!arg }
+    {
+      enabled: !!arg,
+      onError: async (e) => {
+        await router.push("/");
+      },
+      async onSuccess(data) {
+        if (!data) await router.push("/");
+      },
+    }
   );
   return (
     <div>

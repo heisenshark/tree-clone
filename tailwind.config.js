@@ -8,7 +8,7 @@ const config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", ...fontFamily.sans],
+        // sans: ["var(--font-sans)", ...fontFamily.sans],
       }, colors: {
         ...mauve,
         ...violet,
