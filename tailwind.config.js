@@ -15,16 +15,39 @@ const config = {
         ...green,
         ...blackA,
       },
+      screens: {
+        // => @media (max-width: 1535px) { ... }
+        'm2xl': { 'max': '1535px' },
+        'mxl': { 'max': '1279px' },
+        'mlg': { 'max': '1023px' },
+        'mmd': { 'max': '767px' },
+        'msm': { 'max': '639px' },
+      },
 
 
       keyframes: {
-        "accordion-down": {
+        wave: {
+          '0%': { transform: 'rotate(0.0deg)' },
+          '10%': { transform: 'rotate(14deg)' },
+          '20%': { transform: 'rotate(-8deg)' },
+          '30%': { transform: 'rotate(14deg)' },
+          '40%': { transform: 'rotate(-4deg)' },
+          '50%': { transform: 'rotate(10.0deg)' },
+          '60%': { transform: 'rotate(0.0deg)' },
+          '100%': { transform: 'rotate(0.0deg)' },
+        },
+
+        accordion: {
           from: { height: '0' },
           to: { height: "var(--radix-accordion-content-height)" },
         },
-        "accordion-up": {
+        accordionUp: {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: '0' },
+        },
+        translateRight: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
         },
         overlayShow: {
           from: { opacity: 0 },
@@ -39,6 +62,7 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "translate-right": "translateRight ease-out",
       },
     },
 

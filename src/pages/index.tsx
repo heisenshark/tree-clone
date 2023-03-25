@@ -23,23 +23,24 @@ const Home: NextPage = () => {
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
           <AuthShowcase />
         </div>
-        <div className="m-10 h-80 w-10/12 max-w-screen-lg p-10 border-b-2">
-          <div className="w-1/2 text-6xl text-white">
+        <div className="m-10 flex h-80 w-10/12 max-w-screen-lg flex-row border-b-2 p-10">
+          <div className="w-1/2 text-4xl text-white sm:text-6xl">
             All of your social media, in one place
           </div>
+          {/* <div>elo</div> */}
         </div>
-        <div className="m-10 h-80 w-10/12 max-w-screen-lg p-10 border-b-2">
-          <div className="w-1/2 text-6xl text-white">
+        <div className="m-10 h-80 w-10/12 max-w-screen-lg border-b-2 p-10">
+          <div className="w-1/2 text-4xl text-white sm:text-6xl">
             Add all of your links into multiple tree links
           </div>
         </div>
-        <div className="m-10 h-80 w-10/12 max-w-screen-lg p-10 border-b-2">
-          <div className="w-1/2 text-6xl text-white">
+        <div className="m-10 h-80 w-10/12 max-w-screen-lg border-b-2 p-10">
+          <div className="w-1/2 text-4xl text-white sm:text-6xl">
             Every user can create up to 20 trees
           </div>
         </div>
-        <div className="m-10 h-80 w-10/12 max-w-screen-lg p-10 border-b-2">
-          <div className="w-1/2 text-6xl text-white">
+        <div className="m-10 h-80 w-10/12 max-w-screen-lg border-b-2 p-10">
+          <div className="w-1/2 text-4xl text-white sm:text-6xl">
             U can describe and customize the list
           </div>
         </div>
