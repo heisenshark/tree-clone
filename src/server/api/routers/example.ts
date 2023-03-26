@@ -62,7 +62,15 @@ const treeRouter = createTRPCRouter({
           },
         },
       });
-      return res;
+      if(!res)return undefined;
+      const user = await ctx.prisma.user.findFirst({
+        where: {
+          id: {
+            equals: res?.userId,
+          },
+        },
+      });
+      return {...res, ...user} as const;
     }),
   findOneJSON: publicProcedure
     .input(z.object({ link: linkValidString }))

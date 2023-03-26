@@ -18,7 +18,7 @@ export default function TopBar() {
       <div className="fixed flex w-full justify-center bg-white">
         <div className="top-0 flex h-10 w-full max-w-[100rem] flex-row items-center justify-end bg-white">
           <Link className="mr-auto md:ml-4 " href="/">
-            <h1 className="p-4 text-2xl font-bold text-black drop-shadow-xl">
+            <h1 className="pl-4 text-2xl font-bold text-black drop-shadow-xl">
               TR<span className="text-lime-900">EE</span> CLON
               <span className="text-lime-900">E</span>
             </h1>
@@ -80,7 +80,7 @@ export default function TopBar() {
                 </Dialog.Trigger>
                 <Dialog.Portal>
                   <Dialog.Overlay className="data-[state=open]:animate-overlayShow fixed inset-0 bg-blackA9 md:hidden" />
-                  <Dialog.Content className="fixed animate-translate-right duration-300 top-0 right-0 h-full w-2/3 bg-white p-[25px] md:hidden">
+                  <Dialog.Content className="fixed top-0 right-0 h-full w-2/3 animate-translate-right bg-white p-[25px] duration-300 md:hidden">
                     <Dialog.Title className="m-0 mt-4 text-4xl font-bold text-mauve12">
                       User menu
                     </Dialog.Title>

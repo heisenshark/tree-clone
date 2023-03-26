@@ -1,15 +1,33 @@
 import { Tree } from "@prisma/client";
-import { GetServerSideProps, GetStaticPaths } from "next";
+import {
+  GetServerSideProps,
+  GetServerSidePropsContext,
+  GetStaticPaths,
+  InferGetServerSidePropsType,
+} from "next";
 import { useRouter } from "next/router";
 import React from "react";
 import { api } from "~/utils/api";
 import { z } from "zod";
 import Link from "next/link";
 import { TreeContent, treeType } from "~/shared";
-export default function Something() {
+import { createProxySSGHelpers } from "@trpc/react-query/ssg";
+import { exampleRouter } from "~/server/api/routers/example";
+import superjson from "superjson";
+import { createInnerTRPCContext, createTRPCContext } from "~/server/api/trpc";
+
+export default function Something({
+  elo,
+  props,
+}: {
+  elo: string;
+  props: InferGetServerSidePropsType<typeof getServerSideProps>;
+}) {
   const router = useRouter();
   const arg = router.query.cokolwiek ?? "";
+  console.log(props);
   console.log(router.query);
+
   const hello = api.example.trees.findOne.useQuery(
     {
       link: arg instanceof Array<string> ? "" : arg,
@@ -24,7 +42,6 @@ export default function Something() {
       },
     }
   );
-
   return parseContent(hello.data?.content);
 }
 function parseContent(xd: string | undefined) {
@@ -44,17 +61,15 @@ function parseContent(xd: string | undefined) {
               {n.text}
             </h1>
           ) : (
-            <div
+            <a
+              href={n.link}
               key={index}
-              className="my-1 flex w-full justify-center rounded-full bg-red-300 p-2 py-4"
+              className="backdrop my-2 flex w-full justify-center rounded-full border-2 bg-red-300 p-2 py-4 transition-all duration-100"
             >
-              <a
-                className="text-md text-center font-medium text-blue-900"
-                href={n.link}
-              >
+              <div className="text-md text-center font-medium text-black">
                 {n.text}
-              </a>
-            </div>
+              </div>
+            </a>
           );
         })}
       </div>
@@ -74,4 +89,38 @@ function parseContent(xd: string | undefined) {
   );
 }
 
+// export const getServerSideProps: GetServerSideProps = async (ctx) => {
+//   const elo = "elo";
+//   const arg = ctx.query.cokolwiek ?? "";
+//   return {
+//     props: { elo: arg },
+//   };
+// };
+
 const arr = [{ type: "header", text: "elo wale wiadro" }];
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext<{ id: string }>
+) {
+  const ssg = createProxySSGHelpers({
+    router: exampleRouter,
+    ctx: createInnerTRPCContext({
+      session: null,
+    }),
+    transformer: superjson,
+  });
+  // const id = context.params?.id as string;
+  const id = "test";
+  /*
+   * Prefetching the `post.byId` query here.
+   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
+   */
+  await ssg.trees.findOne.fetch({ link: id });
+  // Make sure to return { props: { trpcState: ssg.dehydrate() } }
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      id,
+    },
+  };
+}
