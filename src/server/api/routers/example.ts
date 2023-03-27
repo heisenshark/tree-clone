@@ -8,16 +8,9 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { parseTreeString } from "~/shared"
+import { linkValidString, treeSchema, TreeSchema } from "~/utils/types"
 
-const linkValidString = z
-  .string()
-  .min(4, "Link must be above 4 characters")
-  .max(20, "link length must be below 20 characters")
-  .nonempty()
-  .regex(
-    new RegExp("^[a-zA-Z0-9]+$"),
-    "link must contain only letters and numbers, no special signs"
-  );
+
 
 const reservedNames = ["admin", "about", "", "index", "trpc", "auth"];
 const treeRouter = createTRPCRouter({
@@ -44,13 +37,15 @@ const treeRouter = createTRPCRouter({
           message: "Tree name already taken",
           code: "BAD_REQUEST",
         });
-      return ctx.prisma.tree.create({
+      const res = await ctx.prisma.tree.create({
         data: {
           link: input.link,
           content: input.content,
           userId: ctx.session.user.id,
         },
       });
+      await ctx.res?.revalidate(`/${input.link}`); 
+      return res;
     }),
   findOne: publicProcedure
     .input(z.object({ link: linkValidString }))
@@ -63,6 +58,7 @@ const treeRouter = createTRPCRouter({
         },
       });
       if(!res)return undefined;
+      const content = {...res, content: JSON.parse(res.content) as TreeSchema};
       const user = await ctx.prisma.user.findFirst({
         where: {
           id: {
@@ -70,7 +66,7 @@ const treeRouter = createTRPCRouter({
           },
         },
       });
-      return {...res, ...user} as const;
+      return {...content, ...user} as const;
     }),
   findOneJSON: publicProcedure
     .input(z.object({ link: linkValidString }))
@@ -97,7 +93,7 @@ const treeRouter = createTRPCRouter({
   }),
   updateUserTree: protectedProcedure
     .input(
-      z.object({ link: linkValidString.and(z.string()), newContent: z.string(), newLink:linkValidString.and(z.string()) })
+      z.object({ link: linkValidString.and(z.string()), newContent: treeSchema, newLink:linkValidString.and(z.string()) })
     )
     .mutation(async ({ ctx, input }) => {
       const tree = await ctx.prisma.tree.findFirst({
@@ -112,7 +108,7 @@ const treeRouter = createTRPCRouter({
 
       if(input.newLink!=input.link && await findTree(input.newLink, ctx.prisma)) throw new TRPCError({ code:"BAD_REQUEST",message:"new name is reserved"});
 
-      tree.content = input.newContent;
+      tree.content = JSON.stringify(input.newContent);
       tree.link = input.newLink;
       const res = await ctx.prisma.tree.update(
         {
@@ -124,7 +120,7 @@ const treeRouter = createTRPCRouter({
           }
         }
       );
-      return res; 
+      return res;
     }),
 });
 

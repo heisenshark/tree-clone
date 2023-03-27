@@ -22,6 +22,8 @@ import { prisma } from "~/server/db";
 
 type CreateContextOptions = {
   session: Session | null;
+  res? : NextApiResponse;
+  req? : NextApiRequest;
 };
 
 /**
@@ -38,6 +40,8 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     session: opts.session,
     prisma,
+    res : opts.res,
+    req : opts.req,
   };
 };
 
@@ -55,6 +59,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 
   return createInnerTRPCContext({
     session,
+    req,res
   });
 };
 
@@ -65,11 +70,22 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
  */
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+import { ZodError } from "zod"
+import { NextApiRequest, NextApiResponse } from "next"
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
-  errorFormatter({ shape }) {
-    return shape;
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
   },
 });
 
@@ -104,7 +120,8 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       // infers the `session` as non-nullable
-      session: { ...ctx.session, user: ctx.session.user },
+      session: { ...ctx.session, user: ctx.session.user},
+      
     },
   });
 });

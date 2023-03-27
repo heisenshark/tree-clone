@@ -1,21 +1,27 @@
 import { Tree } from "@prisma/client";
-import { GetServerSideProps, GetStaticPaths } from "next";
+import {
+  GetServerSideProps,
+  GetServerSidePropsContext,
+  GetStaticPaths,
+} from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { parseTreeString, TreeContent } from "~/shared";
 import { api } from "~/utils/api";
+import { ErrorMessage } from "@hookform/error-message";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "~/server/auth";
+import { Flatten, TreeSchema, treeSchema } from "~/utils/types";
 
-interface Inputs {
-  newLink: string;
-  newContent: string;
-}
-
+type ElementSchema = z.infer<typeof elementSchema>;
 export default function Edit() {
   const router = useRouter();
   const arg = router.query.editID ?? "";
-  const [treeData, setTreeData] = useState<TreeContent>([]);
+  const [treeData, setTreeData] = useState<TreeSchema>([]);
   const edittedTree = api.example.trees.findOne.useQuery(
     {
       link: arg instanceof Array<string> ? "" : arg,
@@ -24,48 +30,46 @@ export default function Edit() {
       enabled: !!arg,
       onSuccess(data) {
         console.log(data);
-        setTreeData(parseTreeString(data?.content) as TreeContent);
+        setTreeData(data?.content);
       },
     }
   );
+
   const updateTree = api.example.trees.updateUserTree.useMutation({
     onSuccess: async (data, variables, context) => {
-      console.log(data, variables, context);
       await router.push(`/edit/${data.link}`, undefined, { shallow: true });
     },
   });
+
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    console.log("ading");
+    if (!edittedTree.data) return;
+    console.log("there was data");
+    updateTree.mutate({
+      link: edittedTree.data?.link,
+      newLink: data.newLink,
+      newContent: treeData,
+    });
+  };
+  const onSubmit2: SubmitHandler<Flatten<TreeSchema>> = (data) => {
+    console.log(data);
+    if (!edittedTree.data) return;
+    treeData.push({ ...data });
+    setTreeData([...treeData]);
+  };
+
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<Inputs>();
-  const form2 = useForm<{
-    type: "link" | "header";
-    text: string;
-    link?: string;
-  }>();
+  } = useForm<Inputs>({
+    resolver: zodResolver(inputsSchema),
+  });
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    if (!edittedTree.data) return;
-    updateTree.mutate({
-      link: edittedTree.data?.link,
-      newLink: data.newLink,
-      newContent: JSON.stringify(treeData),
-    });
-  };
-
-  const onSubmit2: SubmitHandler<{
-    type: "link" | "header";
-    text: string;
-    link?: string;
-  }> = async (data) => {
-    if (!edittedTree.data) return;
-    if (data.type === "header") delete data["link"];
-    console.log(data);
-    treeData.push({ ...data });
-    setTreeData([...treeData]);
-  };
+  const form2 = useForm<ElementSchema>({
+    resolver: zodResolver(elementSchema),
+  });
 
   function moveElement(index: number, move: number) {
     if (
@@ -95,32 +99,27 @@ export default function Edit() {
         className="text-2xl text-slate-300 underline hover:text-slate-400"
       >
         Tree link: /{edittedTree.data.link}
+        {JSON.stringify(updateTree.error?.data?.zodError?.fieldErrors)}
       </Link>
-      <form
-        action=""
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
         <label className="text-md" htmlFor="newLink">
           Change url of tree
         </label>
         <input
-          className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
+          className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300 invalid:bg-red-300"
           type="text"
-          {...register("newLink")}
+          {...register("newLink", { required: "siema kurwa", minLength: 4 })}
           defaultValue={edittedTree.data.link}
         />
+        {errors.newLink?.message}
+
         <input
           type="submit"
           className="text-md my-2 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
           value="Update Name"
         />
       </form>
-      <form
-        className="flex flex-col"
-        action=""
-        onSubmit={form2.handleSubmit(onSubmit2)}
-      >
+      <form className="flex flex-col" onSubmit={form2.handleSubmit(onSubmit2)}>
         <h1>Add Element</h1>
         <div className="flex flex-wrap gap-2">
           <select
@@ -191,4 +190,45 @@ export default function Edit() {
       })}
     </div>
   );
+}
+
+//TODO Ad dsome serversied props mumbo jumbo an dredirects if not logged in lol
+
+const inputsSchema = z.object({
+  newLink: z
+    .string()
+    .min(4, "Link must be above 4 characters")
+    .max(20, "link length must be below 20 characters")
+    .nonempty("link must not be empty")
+    .regex(
+      new RegExp("^[a-zA-Z0-9]+$"),
+      "link must contain only letters and numbers, no special signs"
+    ),
+});
+
+type Inputs = z.infer<typeof inputsSchema>;
+
+const elementSchema = z.object({
+  type: z.union([z.literal("header"), z.literal("link")]),
+  text: z.string().nonempty("text must not be empty"),
+  link: z.string().url().optional(),
+});
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions);
+  const arg = context.query.editID ?? "";
+  // api.example.trees.findOne.useQuery.
+  if (!session?.user) {
+    return {
+      redirect: {
+        destination: "/api/auth/signin",
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {
+      session: await getServerSession(context.req, context.res, authOptions),
+    },
+  };
 }

@@ -1,6 +1,6 @@
 import { TRPCClientError } from "@trpc/client";
 import { TRPCError } from "@trpc/server";
-import { GetServerSideProps } from "next";
+import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -10,6 +10,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "~/server/auth";
 
 type Inputs = {
   link: string;
@@ -18,9 +20,16 @@ type Inputs = {
 
 const Admin = () => {
   const add = api.example.trees.addOne.useMutation();
-  const userTrees = api.example.trees.getUserTrees.useQuery();
   const session = useSession();
   const router = useRouter();
+  const userTrees = api.example.trees.getUserTrees.useQuery(
+    {},
+    {
+      onError() {
+        router.push("/api/auth/signin");
+      },
+    }
+  );
   const {
     register,
     handleSubmit,
@@ -47,9 +56,7 @@ const Admin = () => {
       return add.error.message;
     }
   }
-  useEffect(() => {
-    console.log(add);
-  }, [add.error]);
+
   return (
     <div className="flex-1 bg-lime-900 px-8 text-white">
       <h1 className="my-4 text-3xl">Add tree</h1>
@@ -82,9 +89,6 @@ const Admin = () => {
             <div
               key={n.id}
               className="my-4 flex rounded-md border-2 bg-slate-700 p-4 text-xl"
-              onClick={() => {
-                router.push(`/${n.link}`);
-              }}
             >
               <div className="inline-flex text-3xl capitalize">{n.link}</div>
               <Link
@@ -108,3 +112,20 @@ const Admin = () => {
 };
 
 export default Admin;
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions);
+  if (!session?.user) {
+    return {
+      redirect: {
+        destination: "/api/auth/signin",
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {
+      session: await getServerSession(context.req, context.res, authOptions),
+    },
+  };
+}
