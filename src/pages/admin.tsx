@@ -12,6 +12,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "~/server/auth";
+import { QueryClient } from "@tanstack/react-query";
+import Trpc from "./api/trpc/[trpc]";
 
 type Inputs = {
   link: string;
@@ -19,23 +21,39 @@ type Inputs = {
 };
 
 const Admin = () => {
-  const add = api.example.trees.addOne.useMutation();
   const session = useSession();
   const router = useRouter();
-  const userTrees = api.example.trees.getUserTrees.useQuery(
-    {},
-    {
-      onError() {
-        router.push("/api/auth/signin");
-      },
-    }
-  );
+  const context = api.useContext();
+  const add = api.example.trees.addOne.useMutation({
+    onSuccess(data) {
+      console.log("deleted", data);
+      userTrees.refetch();
+    },
+  });
+  const userTrees = api.example.trees.getUserTrees.useQuery(["UserTrees"], {
+    async onError() {
+      await router.push("/api/auth/signin");
+    },
+    async onSuccess(data) {
+      console.log("data", data);
+      setTrees(data);
+    },
+  });
+
+  const deleteTree = api.example.trees.deleteTree.useMutation({
+    onSuccess(data) {
+      console.log("deleted", data);
+      userTrees.refetch();
+    },
+  });
+
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
   } = useForm<Inputs>();
+
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     console.log("adding stuff\n", data);
     const xd = add.mutate({
@@ -45,23 +63,30 @@ const Admin = () => {
     console.log(xd);
   };
 
-  function computeError() {
-    if (!add.error) return "";
-    console.log(add.error?.message);
-    try {
-      const lol = JSON.parse(add.error.message);
-      // if (lol instanceof Array<ZodIssue>) return add.error.message + "co do kurwy";
-      return (lol as ZodIssue[]).reduce((a, n) => a + n.message + " ", "");
-    } catch (e) {
-      return add.error.message;
-    }
-  }
+  const [Trees, setTrees] = useState(userTrees.data ?? []);
 
+  useEffect(() => {
+    console.log("rerender");
+  });
   return (
     <div className="flex-1 bg-lime-900 px-8 text-white">
+      <button
+        onClick={() => {
+          userTrees.refetch();
+        }}
+      >
+        aaaaaaaaaaa
+      </button>
       <h1 className="my-4 text-3xl">Add tree</h1>
       <div className="mt-4">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex">
+        <form
+          onSubmit={(e) => {
+            handleSubmit(onSubmit)(e).catch((ee) => {
+              console.log("ee", ee);
+            });
+          }}
+          className="flex"
+        >
           {/* register your input into the hook by invoking the "register" function */}
           <input
             className="w-full rounded border border-gray-300 bg-white py-1 px-3 text-base leading-8 text-gray-700 outline-none transition-colors duration-200 ease-in-out focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
@@ -76,21 +101,21 @@ const Admin = () => {
             type="submit"
           />
         </form>
-        {add.error && <div className="text-red-700">{computeError()}</div>}
+        {JSON.stringify(add?.error?.data?.zodError)}
       </div>
 
-      <div className="drop-shadow-lg">
+      <div className="">
         <h1 className="text-3xl">
           {session.data?.user.name}
           {"'s"} trees
         </h1>
-        {userTrees.data?.map((n) => {
+        {Trees.map((n) => {
           return (
             <div
               key={n.id}
               className="my-4 flex rounded-md border-2 bg-slate-700 p-4 text-xl"
             >
-              <div className="inline-flex text-3xl capitalize">{n.link}</div>
+              <div className="inline-flex text-3xl">{n.link}</div>
               <Link
                 className="mx-2 ml-auto font-light tracking-tighter underline hover:text-slate-500"
                 href={`/${n.link}`}
@@ -103,6 +128,14 @@ const Admin = () => {
               >
                 Edit
               </Link>
+              <a
+                className="mx-2 cursor-pointer font-light tracking-tighter underline hover:text-slate-500"
+                onClick={async () => {
+                  await deleteTree.mutate({ link: n.link });
+                }}
+              >
+                Delete
+              </a>
             </div>
           );
         })}

@@ -19,6 +19,7 @@ import superjson from "superjson";
 import { createInnerTRPCContext, createTRPCContext } from "~/server/api/trpc";
 import { TreeSchema } from "~/utils/types";
 import { prisma } from "~/server/db";
+import { getSession } from "next-auth/react";
 
 export default function Something({
   elo,
@@ -26,9 +27,9 @@ export default function Something({
   chuj,
 }: {
   elo: string;
-  props: InferGetServerSidePropsType<typeof getServerSideProps>;
+  props: InferGetServerSidePropsType<typeof getStaticProps>;
   chuj: any;
-}): NextPage {
+}) {
   const router = useRouter();
   const arg = router.query.cokolwiek ?? "";
   console.log(props);
@@ -41,7 +42,7 @@ export default function Something({
     },
     {
       enabled: !!arg,
-      onError: async (e) => {
+      async onError(e) {
         await router.push("/");
       },
       async onSuccess(data) {
@@ -102,11 +103,17 @@ function parseContent(xd: TreeSchema) {
 const arr = [{ type: "header", text: "elo wale wiadro" }];
 
 export async function getStaticProps(
-  context: GetStaticPropsContext<{ id: string }>
+  context: GetStaticPropsContext<{ cokolwiek: string }>
 ) {
+  const session = await getSession();
   const ssg = createProxySSGHelpers({
     router: exampleRouter,
-    ctx: {},
+    ctx: {
+      req: undefined,
+      res: undefined,
+      prisma: prisma,
+      session: session,
+    },
     transformer: superjson,
   });
   // const id = context.params?.id as string;
@@ -127,9 +134,15 @@ export async function getStaticProps(
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
+  const session = await getSession();
   const ssg = createProxySSGHelpers({
     router: exampleRouter,
-    ctx: {},
+    ctx: {
+      req: undefined,
+      res: undefined,
+      prisma: prisma,
+      session: session,
+    },
     transformer: superjson,
   });
   const trees = await prisma.tree.findMany({});

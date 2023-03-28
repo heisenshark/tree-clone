@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import React, { useState } from "react";
@@ -12,6 +13,7 @@ export default function TopBar() {
   const router = useRouter();
   const arg = router.query.cokolwiek ?? "";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   if (arg !== "") return <></>;
   return (
     <div className="flex items-center justify-center bg-red-100 shadow-md">
@@ -30,8 +32,14 @@ export default function TopBar() {
               </Link>
               <a
                 className="mx-2 cursor-pointer mmd:hidden"
-                onClick={async () => {
-                  await signOut();
+                onClick={() => {
+                  signOut()
+                    .then(() => {
+                      console.log("upa");
+                    })
+                    .catch(() => {
+                      console.log("upa");
+                    });
                 }}
               >
                 Sign Out

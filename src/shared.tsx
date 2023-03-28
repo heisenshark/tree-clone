@@ -26,5 +26,7 @@ function parseTreeString(treeString: string) {
   }
 }
 
+function errorHanle() {}
+
 export { parseTreeString, treeType };
 export type { TreeContent };

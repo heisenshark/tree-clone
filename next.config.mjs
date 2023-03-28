@@ -28,10 +28,9 @@ const config = {
     domains: ['cdn.discordapp.com'],
     formats: ['image/avif', 'image/webp'],
   },
-  experimental: { appDir: true },
-  // i18n: {
-  //   locales: ["en"],
-  //   defaultLocale: "en",
-  // },
+  i18n: {
+    locales: ["en"],
+    defaultLocale: "en",
+  },
 }
 export default config

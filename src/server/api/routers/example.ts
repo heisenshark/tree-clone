@@ -1,4 +1,5 @@
-import { Prisma } from "@prisma/client"
+import { prisma } from "./../../db";
+import { Prisma, PrismaClient, Tree } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -80,7 +81,7 @@ const treeRouter = createTRPCRouter({
       });
       console.log(res?.content);
       
-      return parseTreeString(res?.content);
+      return parseTreeString(res?.content ?? "");
     }),
   getUserTrees: protectedProcedure.query(({ ctx }) => {
     return ctx.prisma.tree.findMany({
@@ -122,9 +123,21 @@ const treeRouter = createTRPCRouter({
       );
       return res;
     }),
+    deleteTree: protectedProcedure
+    .input(
+      z.object({ link: linkValidString.and(z.string()) })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.tree.deleteMany({
+        where: {
+          link: input.link,
+          userId: ctx.session.user.id,
+        },
+      })
+    })
 });
 
-async function findTree(link: string, prisma: Prisma): Tree | null{
+async function findTree(link: string, prisma: PrismaClient): Promise<Tree | null>{
   const tree: Tree|null= await prisma.tree.findFirst({
     where: {
       link: {

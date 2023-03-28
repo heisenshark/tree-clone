@@ -30,7 +30,7 @@ export default function Edit() {
       enabled: !!arg,
       onSuccess(data) {
         console.log(data);
-        setTreeData(data?.content);
+        setTreeData(data?.content ?? []);
       },
     }
   );
@@ -51,7 +51,7 @@ export default function Edit() {
       newContent: treeData,
     });
   };
-  const onSubmit2: SubmitHandler<Flatten<TreeSchema>> = (data) => {
+  const onSubmit2: SubmitHandler<ElementSchema> = (data) => {
     console.log(data);
     if (!edittedTree.data) return;
     treeData.push({ ...data });
@@ -101,7 +101,12 @@ export default function Edit() {
         Tree link: /{edittedTree.data.link}
         {JSON.stringify(updateTree.error?.data?.zodError?.fieldErrors)}
       </Link>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
+      <form
+        onSubmit={(e) => {
+          handleSubmit(onSubmit)(e).catch(console.log);
+        }}
+        className="flex flex-col"
+      >
         <label className="text-md" htmlFor="newLink">
           Change url of tree
         </label>
@@ -119,14 +124,19 @@ export default function Edit() {
           value="Update Name"
         />
       </form>
-      <form className="flex flex-col" onSubmit={form2.handleSubmit(onSubmit2)}>
+      <form
+        className="flex flex-col"
+        onSubmit={(e) => {
+          form2.handleSubmit(onSubmit2)(e).catch(console.log);
+        }}
+      >
         <h1>Add Element</h1>
         <div className="flex flex-wrap gap-2">
           <select
             className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
             {...form2.register("type")}
             onChange={(e) => {
-              form2.setValue("type", e.target.value);
+              form2.setValue("type", e.target.value as "header" | "link");
               console.log(e);
             }}
           >
@@ -208,12 +218,18 @@ const inputsSchema = z.object({
 
 type Inputs = z.infer<typeof inputsSchema>;
 
-const elementSchema = z.object({
-  type: z.union([z.literal("header"), z.literal("link")]),
-  text: z.string().nonempty("text must not be empty"),
-  link: z.string().url().optional(),
-});
-
+const elementSchema = z
+  .object({
+    type: z.literal("link"),
+    link: z.string().url(),
+    text: z.string(),
+  })
+  .or(
+    z.object({
+      type: z.literal("header"),
+      text: z.string(),
+    })
+  );
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getServerSession(context.req, context.res, authOptions);
   const arg = context.query.editID ?? "";
