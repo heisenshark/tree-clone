@@ -19,8 +19,8 @@ import superjson from "superjson";
 import { createInnerTRPCContext, createTRPCContext } from "~/server/api/trpc";
 import { TreeSchema } from "~/utils/types";
 import { prisma } from "~/server/db";
-import { getSession } from "next-auth/react";
-
+import { getSession, useSession } from "next-auth/react";
+import Image from "next/image";
 export default function Something({
   elo,
   props,
@@ -31,6 +31,7 @@ export default function Something({
   chuj: any;
 }) {
   const router = useRouter();
+  const session = useSession();
   const arg = router.query.cokolwiek ?? "";
   console.log(props);
   // console.log(chuj);
@@ -52,15 +53,20 @@ export default function Something({
   );
   if (hello.isLoading) return <div>LOADING...</div>;
   if (!hello.data?.content) return <div>ERROR...</div>;
-  return parseContent(hello.data?.content);
-}
-function parseContent(xd: TreeSchema) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-lime-200 px-2">
-      <div className="flex w-[40em] min-w-min max-w-full flex-1 flex-col items-center py-6">
-        {xd.map((n, index) => {
+    <div className="flex flex-1 flex-col items-center justify-center bg-lime-200 px-8">
+      <Image
+        width={128}
+        height={128}
+        className="mt-8 w-32 cursor-pointer rounded-full border-4 shadow-md shadow-stone-500"
+        src={session.data?.user.image ?? ""}
+        alt="user image"
+      />
+
+      <div className="flex w-[40em] min-w-min max-w-full flex-1 flex-col items-center">
+        {hello.data?.content.map((n, index) => {
           return n.type == "header" ? (
-            <h1 className="my-16 break-all text-2xl font-bold" key={index}>
+            <h1 className="my-4 break-all text-2xl font-bold" key={index}>
               {n.text}
             </h1>
           ) : (

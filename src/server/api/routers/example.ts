@@ -107,7 +107,7 @@ const treeRouter = createTRPCRouter({
       if (!tree) throw new TRPCError({ code:"BAD_REQUEST",message:"tree does not exist"});
       if (tree.userId!= ctx.session.user.id) throw new TRPCError({ code:"UNAUTHORIZED",message:"tree is not owned by current user"});
 
-      if(input.newLink!=input.link && await findTree(input.newLink, ctx.prisma)) throw new TRPCError({ code:"BAD_REQUEST",message:"new name is reserved"});
+      if(input.newLink!=input.link && await findTree(input.newLink, ctx.prisma)) throw new TRPCError({ code:"BAD_REQUEST",message:"new name is already in use."});
 
       tree.content = JSON.stringify(input.newContent);
       tree.link = input.newLink;

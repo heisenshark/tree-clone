@@ -21,13 +21,13 @@ type ElementSchema = z.infer<typeof elementSchema>;
 export default function Edit() {
   const router = useRouter();
   const arg = router.query.editID ?? "";
-  const [treeData, setTreeData] = useState<TreeSchema>([]);
+  const [treeData, setTreeData] = useState<TreeSchema | undefined>(undefined);
   const edittedTree = api.example.trees.findOne.useQuery(
     {
       link: arg instanceof Array<string> ? "" : arg,
     },
     {
-      enabled: !!arg,
+      enabled: !treeData,
       onSuccess(data) {
         console.log(data);
         setTreeData(data?.content ?? []);
@@ -42,6 +42,7 @@ export default function Edit() {
   });
 
   const onSubmit: SubmitHandler<Inputs> = (data) => {
+    if (!treeData) return;
     console.log("ading");
     if (!edittedTree.data) return;
     console.log("there was data");
@@ -54,7 +55,9 @@ export default function Edit() {
   const onSubmit2: SubmitHandler<ElementSchema> = (data) => {
     console.log(data);
     if (!edittedTree.data) return;
-    treeData.push({ ...data });
+    if (!treeData) return;
+    if (data.type === "link" && data.link === undefined) return;
+    treeData.push({ type: data.type, link: data.link ?? "", text: data.text });
     setTreeData([...treeData]);
   };
 
@@ -72,6 +75,7 @@ export default function Edit() {
   });
 
   function moveElement(index: number, move: number) {
+    if (!treeData) return;
     if (
       index + move < 0 ||
       index + move > treeData.length ||
@@ -87,117 +91,132 @@ export default function Edit() {
     setTreeData([...treeData]);
   }
   function deleteElement(index: number): void {
+    if (!treeData) return;
     treeData.splice(index, 1);
     setTreeData([...treeData]);
   }
 
   if (!edittedTree.data) return <div>could not find the tree</div>;
   return (
-    <div className="flex-1 bg-gradient-to-t from-lime-900 to-lime-600 p-4 text-white">
-      <Link
-        href={`/${edittedTree.data.link}`}
-        className="text-2xl text-slate-300 underline hover:text-slate-400"
-      >
-        Tree link: /{edittedTree.data.link}
-        {JSON.stringify(updateTree.error?.data?.zodError?.fieldErrors)}
-      </Link>
-      <form
-        onSubmit={(e) => {
-          handleSubmit(onSubmit)(e).catch(console.log);
-        }}
-        className="flex flex-col"
-      >
-        <label className="text-md" htmlFor="newLink">
-          Change url of tree
-        </label>
-        <input
-          className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300 invalid:bg-red-300"
-          type="text"
-          {...register("newLink", { required: "siema kurwa", minLength: 4 })}
-          defaultValue={edittedTree.data.link}
-        />
-        {errors.newLink?.message}
+    <div className="flex flex-1 justify-center bg-gradient-to-t from-lime-900 to-lime-600 p-4 text-white">
+      <div className="max-w-2xl flex-auto">
+        <Link
+          href={`/${edittedTree.data.link}`}
+          className="text-2xl text-slate-300 underline hover:text-slate-400"
+        >
+          Tree link: /{edittedTree.data.link}
+          {JSON.stringify(updateTree.error?.data?.zodError?.fieldErrors)}
+        </Link>
+        <form
+          onSubmit={(e) => {
+            handleSubmit(onSubmit)(e).catch(console.log);
+          }}
+          className="flex flex-col"
+        >
+          <label className="text-md" htmlFor="newLink">
+            Change url of tree
+          </label>
+          <div className="flex w-full">
+            <input
+              className="my-2 flex-auto rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300 invalid:bg-red-300"
+              type="text"
+              {...register("newLink", {
+                required: "siema kurwa",
+                minLength: 4,
+              })}
+              defaultValue={edittedTree.data.link}
+            />
 
-        <input
-          type="submit"
-          className="text-md my-2 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
-          value="Update Name"
-        />
-      </form>
-      <form
-        className="flex flex-col"
-        onSubmit={(e) => {
-          form2.handleSubmit(onSubmit2)(e).catch(console.log);
-        }}
-      >
-        <h1>Add Element</h1>
-        <div className="flex flex-wrap gap-2">
-          <select
-            className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
-            {...form2.register("type")}
-            onChange={(e) => {
-              form2.setValue("type", e.target.value as "header" | "link");
-              console.log(e);
-            }}
-          >
-            <option value="header">header</option>
-            <option value="link">link</option>
-          </select>
-          <input
-            className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
-            type="text"
-            {...form2.register("text")}
-            placeholder="title"
-          />
-          {form2.watch("type") == "link" && (
+            <input
+              type="submit"
+              className="text-md my-2 ml-4 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
+              value="Update tree"
+            />
+          </div>
+          <span className="font-bold text-red-300">
+            <span>{updateTree?.error?.message}</span>
+            {JSON.stringify(updateTree?.error?.data?.zodError?.fieldErrors)}
+          </span>
+        </form>
+        <form
+          className="flex flex-col"
+          onSubmit={(e) => {
+            form2.handleSubmit(onSubmit2)(e).catch(console.log);
+          }}
+        >
+          <h1>Add Element</h1>
+          <div className="flex flex-wrap gap-2">
+            <select
+              className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
+              {...form2.register("type")}
+              onChange={(e) => {
+                form2.setValue("type", e.target.value as "header" | "link");
+                console.log(e);
+              }}
+            >
+              <option value="header">header</option>
+              <option value="link">link</option>
+            </select>
             <input
               className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
               type="text"
-              placeholder="link"
-              {...form2.register("link")}
+              {...form2.register("text")}
+              placeholder="title"
             />
-          )}
-        </div>
-        <input
-          type="submit"
-          className="text-md my-2 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
-          value="Add Element"
-        />
-      </form>
-      {treeData.map((n, index) => {
-        return (
-          <div
-            key={index}
-            className="my-4 rounded-xl border-2 bg-slate-600 p-4"
-          >
-            <div className="">{n.type}</div>
-            <span className="text-3xl">{" " + n.text}</span>
-            <div className="mr-2">
-              <a
-                className="ml-auto cursor-pointer"
-                onClick={() => moveElement(index, -1)}
-              >
-                {" "}
-                Up{" "}
-              </a>
-              <a
-                className="ml-2 cursor-pointer"
-                onClick={() => moveElement(index, 1)}
-              >
-                {" "}
-                Down{" "}
-              </a>
-              <a
-                className="ml-2 cursor-pointer"
-                onClick={() => deleteElement(index)}
-              >
-                {" "}
-                Delete{" "}
-              </a>
-            </div>
+            {form2.watch("type") == "link" && (
+              <input
+                className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
+                type="text"
+                placeholder="link"
+                {...form2.register("link")}
+              />
+            )}
           </div>
-        );
-      })}
+          <input
+            type="submit"
+            className="text-md my-2 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
+            value="Add Element"
+          />
+          <span className="font-bold text-red-300">
+            {form2.formState.errors.text?.message}
+            {form2.formState.errors.link?.message}
+          </span>
+        </form>
+        {treeData?.map((n, index) => {
+          return (
+            <div
+              key={index}
+              className="my-4 rounded-xl border-2 bg-slate-600 p-4"
+            >
+              <div className="">{n.type}</div>
+              <span className="text-3xl">{" " + n.text}</span>
+              <div className="mr-2">
+                <a
+                  className="ml-auto cursor-pointer"
+                  onClick={() => moveElement(index, -1)}
+                >
+                  {" "}
+                  Up{" "}
+                </a>
+                <a
+                  className="ml-2 cursor-pointer"
+                  onClick={() => moveElement(index, 1)}
+                >
+                  {" "}
+                  Down{" "}
+                </a>
+                <a
+                  className="ml-2 cursor-pointer"
+                  onClick={() => deleteElement(index)}
+                >
+                  {" "}
+                  Delete{" "}
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -218,18 +237,15 @@ const inputsSchema = z.object({
 
 type Inputs = z.infer<typeof inputsSchema>;
 
-const elementSchema = z
-  .object({
-    type: z.literal("link"),
-    link: z.string().url(),
-    text: z.string(),
-  })
-  .or(
-    z.object({
-      type: z.literal("header"),
-      text: z.string(),
-    })
-  );
+const elementSchema = z.object({
+  type: z.union([z.literal("link"), z.literal("header")]),
+  link: z
+    .string()
+    .url("Link must be valid url starting with https://")
+    .optional(),
+  text: z.string().nonempty("Title must not be empty"),
+});
+
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getServerSession(context.req, context.res, authOptions);
   const arg = context.query.editID ?? "";
