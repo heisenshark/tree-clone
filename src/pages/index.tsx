@@ -3,9 +3,9 @@ import Head from "next/head";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { api } from "~/utils/api";
+import Link from "next/link";
 
 const Home: NextPage = () => {
-
   return (
     <>
       <Head>
@@ -18,14 +18,11 @@ const Home: NextPage = () => {
           TR<span className="text-lime-300">EE</span> CLON
           <span className="text-lime-300">E</span>
         </h1>
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-          <AuthShowcase />
-        </div>
+        <AuthShowcase />
         <div className="m-10 flex h-80 w-10/12 max-w-screen-lg flex-row border-b-2 p-10">
           <div className="w-1/2 text-4xl text-white sm:text-6xl">
             All of your social media, in one place
           </div>
-          {/* <div>elo</div> */}
         </div>
         <div className="m-10 h-80 w-10/12 max-w-screen-lg border-b-2 p-10">
           <div className="w-1/2 text-4xl text-white sm:text-6xl">
@@ -60,16 +57,21 @@ const AuthShowcase: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center gap-4">
-      <p className="text-center text-2xl text-white">
-        {sessionData && <span>Logged in as {sessionData.user?.name}</span>}
-        {secretMessage && <span> - {secretMessage}</span>}
-      </p>
-      <button
-        className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
-        onClick={sessionData ? () => void signOut() : () => void signIn()}
-      >
-        {sessionData ? "Sign out" : "Sign in"}
-      </button>
+      {!sessionData ? (
+        <button
+          className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
+          onClick={sessionData ? () => void signOut() : () => void signIn()}
+        >
+          Get Started
+        </button>
+      ) : (
+        <Link
+          className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
+          href={"/admin"}
+        >
+          Admin your links
+        </Link>
+      )}
     </div>
   );
 };

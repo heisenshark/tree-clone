@@ -11,15 +11,22 @@ import { authOptions } from "~/server/auth";
 import { linkValidString } from "~/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-const inputsType = z.object({
-  link: linkValidString,
-});
-
-type Inputs = z.infer<typeof inputsType>;
-
 const Admin = () => {
   const session = useSession();
   const router = useRouter();
+  const userTrees = api.example.trees.getUserTrees.useQuery(
+    {},
+    {
+      onError(err) {
+        router.push("/api/auth/signin").catch((e) => console.log(e));
+      },
+      onSuccess(data) {
+        console.log("data", data);
+      },
+      enabled: true,
+    }
+  );
+  console.log(userTrees);
   const {
     register,
     handleSubmit,
@@ -31,14 +38,6 @@ const Admin = () => {
     async onSuccess(data) {
       console.log("deleted", data);
       await userTrees.refetch();
-    },
-  });
-  const userTrees = api.example.trees.getUserTrees.useQuery(undefined, {
-    onError(err) {
-      router.push("/api/auth/signin").catch((e) => console.log(e));
-    },
-    onSuccess(data) {
-      console.log("data", data);
     },
   });
 
@@ -147,6 +146,8 @@ export default Admin;
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getServerSession(context.req, context.res, authOptions);
+  console.log(session?.user);
+
   if (!session?.user) {
     return {
       redirect: {
@@ -161,3 +162,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     },
   };
 }
+
+const inputsType = z.object({
+  link: linkValidString,
+});
+
+type Inputs = z.infer<typeof inputsType>;

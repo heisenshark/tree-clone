@@ -3,44 +3,19 @@ import {
   type GetStaticPropsContext,
   type InferGetServerSidePropsType,
 } from "next";
-import { useRouter } from "next/router";
 import React from "react";
-import { api } from "~/utils/api";
 import Link from "next/link";
 import { createProxySSGHelpers } from "@trpc/react-query/ssg";
 import { exampleRouter } from "~/server/api/routers/example";
 import superjson from "superjson";
 import { prisma } from "~/server/db";
-import { getSession, useSession } from "next-auth/react";
 import Image from "next/image";
 import { createTRPCContext } from "~/server/api/trpc";
-import { log } from "console";
-import { TreeSchema } from "~/utils/types";
 
 export default function Something(
   props: InferGetServerSidePropsType<typeof getStaticProps>
 ) {
-  const { id, tree } = props;
-  const router = useRouter();
-  // const hello = api.example.trees.findOne.useQuery(
-  //   {
-  //     link: id,
-  //   },
-  //   {
-  //     async onError(e) {
-  //       await router.push("/");
-  //     },
-  //     async onSuccess(data) {
-  //       if (!data) await router.push("/");
-  //     },
-  //   }
-  // );
-  console.log(props);
-
-  // console.log(hello);
-
-  // if (hello.isLoading) return <div>LOADING...</div>;
-  // if (hello.status !== "success") return <div>ERROR...</div>;
+  const { tree } = props;
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-lime-200 px-8">
       <Image
@@ -61,7 +36,7 @@ export default function Something(
             <a
               href={n.link}
               key={index}
-              className="backdrop my-2 flex w-full justify-center rounded-full border-2 bg-red-300 p-2 py-4 transition-all duration-100"
+              className="backdrop my-2 flex w-full justify-center rounded-full border-2 bg-red-300 p-2 py-4 transition-all duration-100 active:scale-95"
             >
               <div className="text-md text-center font-medium text-black">
                 {n.text}
@@ -71,7 +46,6 @@ export default function Something(
         })}
       </div>
       <footer className="flex-0 mt-auto w-full pt-10 pb-4">
-        {" "}
         <Link
           className="flex-0 mr-auto flex items-center justify-center"
           href="/"
@@ -86,47 +60,31 @@ export default function Something(
   );
 }
 
-// export const getServerSideProps: GetServerSideProps = async (ctx) => {
-//   const elo = "elo";
-//   const arg = ctx.query.cokolwiek ?? "";
-//   return {
-//     props: { elo: arg },
-//   };
-// };
-
-const arr = [{ type: "header", text: "elo wale wiadro" }];
-
 export async function getStaticProps(
   context: GetStaticPropsContext<{ cokolwiek: string }>
 ) {
-  const elo = await createTRPCContext();
+  const ctx = await createTRPCContext();
   const ssg = createProxySSGHelpers({
     router: exampleRouter,
-    ctx: elo,
+    ctx: ctx,
     transformer: superjson,
   });
-  // const id = context.params?.id as string;
   const id = context.params?.cokolwiek as string;
-  console.log("eluwaaaaaaaaaaaaaaa");
-  console.log("eluwaaaaaaaaaaaaaaa");
-  console.log("eluwaaaaaaaaaaaaaaa");
-  console.log("eluwaaaaaaaaaaaaaaa");
-  console.log("eluwaaaaaaaaaaaaaaa");
-
-  /*
-   * Prefetching the `post.byId` query here.
-   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
-   */
   const tree = await ssg.trees.findOne.fetch({ link: id });
   console.log(tree);
-
-  const treeData = tree?.content;
+  if (tree) {
+    return {
+      props: {
+        trpcState: ssg.dehydrate(),
+        id,
+        tree: tree?.content,
+        userImg: tree?.image,
+      },
+    };
+  }
   return {
-    props: {
-      trpcState: ssg.dehydrate(),
-      id,
-      tree: treeData,
-      userImg: tree?.image,
+    redirect: {
+      destination: "/",
     },
   };
 }

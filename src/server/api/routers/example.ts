@@ -1,6 +1,7 @@
 import { prisma } from "./../../db";
 import { Prisma, PrismaClient, Tree } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
+import { log } from "console"
 import { z } from "zod";
 
 import {
@@ -83,7 +84,11 @@ const treeRouter = createTRPCRouter({
       
       return parseTreeString(res?.content ?? "");
     }),
-  getUserTrees: protectedProcedure.query(({ ctx }) => {
+  getUserTrees: protectedProcedure
+    .input(z.object({}))
+    .query(({ ctx }) => {
+    console.log("siema");
+    
     return ctx.prisma.tree.findMany({
       where: {
         userId: {
