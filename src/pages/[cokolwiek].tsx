@@ -35,7 +35,6 @@ export default function Something(
   //     },
   //   }
   // );
-  const session = useSession();
   console.log(props);
 
   // console.log(hello);
@@ -48,7 +47,7 @@ export default function Something(
         width={128}
         height={128}
         className="mt-8 w-32 cursor-pointer rounded-full border-4 shadow-md shadow-stone-500"
-        src={session.data?.user.image ?? ""}
+        src={props.userImg ?? ""}
         alt="user image"
       />
 
@@ -71,13 +70,13 @@ export default function Something(
           );
         })}
       </div>
-      <footer className="flex-0 mt-auto w-full py-6">
+      <footer className="flex-0 mt-auto w-full pt-10 pb-4">
         {" "}
         <Link
-          className="flex-0 mr-auto flex items-center justify-center md:ml-4"
+          className="flex-0 mr-auto flex items-center justify-center"
           href="/"
         >
-          <h1 className="max-w-min whitespace-nowrap rounded-lg bg-lime-100 p-3 text-2xl font-bold text-black drop-shadow-xl">
+          <h1 className="max-w-min whitespace-nowrap rounded-lg bg-lime-100 p-1 text-xl font-bold text-black drop-shadow-xl">
             TR<span className="text-lime-900">EE</span> CLON
             <span className="text-lime-900">E</span>
           </h1>
@@ -119,12 +118,15 @@ export async function getStaticProps(
    * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
    */
   const tree = await ssg.trees.findOne.fetch({ link: id });
+  console.log(tree);
+
   const treeData = tree?.content;
   return {
     props: {
       trpcState: ssg.dehydrate(),
       id,
       tree: treeData,
+      userImg: tree?.image,
     },
   };
 }
