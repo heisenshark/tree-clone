@@ -121,6 +121,7 @@ const treeRouter = createTRPCRouter({
           }
         }
       );
+      await ctx.res?.revalidate(`/${input.link}`); 
       return res;
     }),
     deleteTree: protectedProcedure

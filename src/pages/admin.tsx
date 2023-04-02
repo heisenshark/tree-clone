@@ -1,22 +1,15 @@
-import { TRPCClientError } from "@trpc/client";
-import { TRPCError } from "@trpc/server";
-import { GetServerSideProps, GetServerSidePropsContext } from "next";
+import { type GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { string, z, ZodError, ZodIssue } from "zod";
+import { useEffect } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
 import { api } from "~/utils/api";
-import * as Dialog from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "~/server/auth";
-import { QueryClient } from "@tanstack/react-query";
-import Trpc from "./api/trpc/[trpc]";
 import { linkValidString } from "~/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { log } from "console";
 
 const inputsType = z.object({
   link: linkValidString,
@@ -27,12 +20,9 @@ type Inputs = z.infer<typeof inputsType>;
 const Admin = () => {
   const session = useSession();
   const router = useRouter();
-  const context = api.useContext();
   const {
     register,
     handleSubmit,
-    watch,
-    setError,
     formState: { errors },
   } = useForm<Inputs>({
     resolver: zodResolver(inputsType),
@@ -66,8 +56,6 @@ const Admin = () => {
     });
     console.log(xd);
   };
-
-  const [Trees, setTrees] = useState(userTrees.data ?? []);
 
   useEffect(() => {
     console.log("rerender");

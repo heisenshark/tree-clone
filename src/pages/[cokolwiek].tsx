@@ -1,58 +1,47 @@
-import { Tree } from "@prisma/client";
 import {
-  GetServerSideProps,
-  GetServerSidePropsContext,
-  GetStaticPaths,
-  GetStaticPropsContext,
-  InferGetServerSidePropsType,
-  NextPage,
+  type GetStaticPaths,
+  type GetStaticPropsContext,
+  type InferGetServerSidePropsType,
 } from "next";
 import { useRouter } from "next/router";
 import React from "react";
 import { api } from "~/utils/api";
-import { z } from "zod";
 import Link from "next/link";
-import { TreeContent, treeType } from "~/shared";
 import { createProxySSGHelpers } from "@trpc/react-query/ssg";
 import { exampleRouter } from "~/server/api/routers/example";
 import superjson from "superjson";
-import { createInnerTRPCContext, createTRPCContext } from "~/server/api/trpc";
-import { TreeSchema } from "~/utils/types";
 import { prisma } from "~/server/db";
 import { getSession, useSession } from "next-auth/react";
 import Image from "next/image";
-export default function Something({
-  elo,
-  props,
-  chuj,
-}: {
-  elo: string;
-  props: InferGetServerSidePropsType<typeof getStaticProps>;
-  chuj: any;
-}) {
-  const router = useRouter();
-  const session = useSession();
-  const arg = router.query.cokolwiek ?? "";
-  console.log(props);
-  // console.log(chuj);
-  console.log(router.query);
+import { createTRPCContext } from "~/server/api/trpc";
+import { log } from "console";
+import { TreeSchema } from "~/utils/types";
 
-  const hello = api.example.trees.findOne.useQuery(
-    {
-      link: arg instanceof Array<string> ? "" : arg,
-    },
-    {
-      enabled: !!arg,
-      async onError(e) {
-        await router.push("/");
-      },
-      async onSuccess(data) {
-        if (!data) await router.push("/");
-      },
-    }
-  );
-  if (hello.isLoading) return <div>LOADING...</div>;
-  if (!hello.data?.content) return <div>ERROR...</div>;
+export default function Something(
+  props: InferGetServerSidePropsType<typeof getStaticProps>
+) {
+  const { id, tree } = props;
+  const router = useRouter();
+  // const hello = api.example.trees.findOne.useQuery(
+  //   {
+  //     link: id,
+  //   },
+  //   {
+  //     async onError(e) {
+  //       await router.push("/");
+  //     },
+  //     async onSuccess(data) {
+  //       if (!data) await router.push("/");
+  //     },
+  //   }
+  // );
+  const session = useSession();
+  console.log(props);
+
+  // console.log(hello);
+
+  // if (hello.isLoading) return <div>LOADING...</div>;
+  // if (hello.status !== "success") return <div>ERROR...</div>;
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-lime-200 px-8">
       <Image
@@ -64,7 +53,7 @@ export default function Something({
       />
 
       <div className="flex w-[40em] min-w-min max-w-full flex-1 flex-col items-center">
-        {hello.data?.content.map((n, index) => {
+        {tree?.map((n, index) => {
           return n.type == "header" ? (
             <h1 className="my-4 break-all text-2xl font-bold" key={index}>
               {n.text}
@@ -111,49 +100,39 @@ const arr = [{ type: "header", text: "elo wale wiadro" }];
 export async function getStaticProps(
   context: GetStaticPropsContext<{ cokolwiek: string }>
 ) {
-  const session = await getSession();
+  const elo = await createTRPCContext();
   const ssg = createProxySSGHelpers({
     router: exampleRouter,
-    ctx: {
-      req: undefined,
-      res: undefined,
-      prisma: prisma,
-      session: session,
-    },
+    ctx: elo,
     transformer: superjson,
   });
   // const id = context.params?.id as string;
   const id = context.params?.cokolwiek as string;
+  console.log("eluwaaaaaaaaaaaaaaa");
+  console.log("eluwaaaaaaaaaaaaaaa");
+  console.log("eluwaaaaaaaaaaaaaaa");
+  console.log("eluwaaaaaaaaaaaaaaa");
+  console.log("eluwaaaaaaaaaaaaaaa");
+
   /*
    * Prefetching the `post.byId` query here.
    * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
    */
-  const elo = await ssg.trees.findOne.prefetch({ link: id });
-
-  // Make sure to return { props: { trpcState: ssg.dehydrate() } }
+  const tree = await ssg.trees.findOne.fetch({ link: id });
+  const treeData = tree?.content;
   return {
     props: {
       trpcState: ssg.dehydrate(),
       id,
+      tree: treeData,
     },
   };
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const session = await getSession();
-  const ssg = createProxySSGHelpers({
-    router: exampleRouter,
-    ctx: {
-      req: undefined,
-      res: undefined,
-      prisma: prisma,
-      session: session,
-    },
-    transformer: superjson,
-  });
   const trees = await prisma.tree.findMany({});
   const paths = trees.map((tree) => ({
     params: { cokolwiek: tree.link },
   }));
-  return { paths, fallback: true };
+  return { paths, fallback: "blocking" };
 };
