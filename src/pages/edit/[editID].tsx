@@ -1,46 +1,51 @@
-import { Tree } from "@prisma/client";
 import {
-  GetServerSideProps,
-  GetServerSidePropsContext,
-  GetStaticPaths,
+  InferGetServerSidePropsType,
+  type GetServerSidePropsContext,
 } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { parseTreeString, TreeContent } from "~/shared";
+import React, { useState } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import { api } from "~/utils/api";
-import { ErrorMessage } from "@hookform/error-message";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "~/server/auth";
-import { Flatten, TreeSchema, treeSchema } from "~/utils/types";
-
+import { type TreeSchema } from "~/utils/types";
+import { createProxySSGHelpers } from "@trpc/react-query/ssg";
+import { appRouter } from "~/server/api/root";
+import { prisma } from "~/server/db";
+import superjson from "superjson";
 type ElementSchema = z.infer<typeof elementSchema>;
-export default function Edit() {
+export default function Edit({
+  link,
+  trpcState,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const router = useRouter();
-  const arg = router.query.editID ?? "";
-  const [treeData, setTreeData] = useState<TreeSchema | undefined>(undefined);
+  const [treeName, setTreeName] = useState(link);
   const edittedTree = api.example.trees.findOne.useQuery(
     {
-      link: arg instanceof Array<string> ? "" : arg,
+      link: treeName,
     },
     {
-      enabled: !treeData,
+      refetchOnWindowFocus: false,
       onSuccess(data) {
-        console.log(data);
         setTreeData(data?.content ?? []);
       },
     }
   );
-
+  const [treeData, setTreeData] = useState<TreeSchema | undefined>(
+    edittedTree?.data?.content ?? []
+  );
   const updateTree = api.example.trees.updateUserTree.useMutation({
     onSuccess: async (data, variables, context) => {
       await router.push(`/edit/${data.link}`, undefined, { shallow: true });
+      setTreeName(data.link);
+    },
+    onMutate() {
+      console.log("mutating");
     },
   });
-
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     if (!treeData) return;
     console.log("ading");
@@ -96,15 +101,16 @@ export default function Edit() {
     setTreeData([...treeData]);
   }
 
-  if (!edittedTree.data) return <div>could not find the tree</div>;
+  // if (edittedTree.isLoading) return <div>Loading ...</div>;
+  // if (edittedTree.isError || !edittedTree.data) return <div>Error</div>;
   return (
     <div className="flex flex-1 justify-center bg-gradient-to-t from-lime-900 to-lime-600 p-4 text-white">
       <div className="max-w-2xl flex-auto">
         <Link
-          href={`/${edittedTree.data.link}`}
+          href={`/${treeName}`}
           className="text-2xl text-slate-300 underline hover:text-slate-400"
         >
-          Tree link: /{edittedTree.data.link}
+          Tree link: /{treeName}
           {JSON.stringify(updateTree.error?.data?.zodError?.fieldErrors)}
         </Link>
         <form
@@ -121,10 +127,10 @@ export default function Edit() {
               className="my-2 flex-auto rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300 invalid:bg-red-300"
               type="text"
               {...register("newLink", {
-                required: "siema kurwa",
+                required: "required",
                 minLength: 4,
               })}
-              defaultValue={edittedTree.data.link}
+              defaultValue={treeName}
             />
 
             <input
@@ -189,6 +195,8 @@ export default function Edit() {
               className="my-4 rounded-xl border-2 bg-slate-600 p-4"
             >
               <div className="">{n.type}</div>
+
+              <input className="text-black" type="text" defaultValue={n.text} />
               <span className="text-3xl">{" " + n.text}</span>
               <div className="mr-2">
                 <a
@@ -223,6 +231,35 @@ export default function Edit() {
 
 //TODO Ad dsome serversied props mumbo jumbo an dredirects if not logged in lol
 
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions);
+  const ssg = createProxySSGHelpers({
+    router: appRouter,
+    ctx: { session, prisma },
+    transformer: superjson,
+  });
+
+  await ssg.example.trees.findOne.prefetch({
+    link: context.params?.editID as string,
+  });
+
+  if (!session?.user) {
+    return {
+      redirect: {
+        destination: "/api/auth/signin",
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {
+      link: context.params?.editID as string,
+      trpcState: ssg.dehydrate(),
+      session: await getServerSession(context.req, context.res, authOptions),
+    },
+  };
+}
+
 const inputsSchema = z.object({
   newLink: z
     .string()
@@ -245,22 +282,3 @@ const elementSchema = z.object({
     .optional(),
   text: z.string().nonempty("Title must not be empty"),
 });
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const session = await getServerSession(context.req, context.res, authOptions);
-  const arg = context.query.editID ?? "";
-  // api.example.trees.findOne.useQuery.
-  if (!session?.user) {
-    return {
-      redirect: {
-        destination: "/api/auth/signin",
-        permanent: false,
-      },
-    };
-  }
-  return {
-    props: {
-      session: await getServerSession(context.req, context.res, authOptions),
-    },
-  };
-}

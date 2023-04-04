@@ -11,6 +11,7 @@ import superjson from "superjson";
 import { prisma } from "~/server/db";
 import Image from "next/image";
 import { createTRPCContext } from "~/server/api/trpc";
+import { appRouter } from "~/server/api/root";
 
 export default function Something(
   props: InferGetServerSidePropsType<typeof getStaticProps>
@@ -65,12 +66,12 @@ export async function getStaticProps(
 ) {
   const ctx = await createTRPCContext();
   const ssg = createProxySSGHelpers({
-    router: exampleRouter,
+    router: appRouter,
     ctx: ctx,
     transformer: superjson,
   });
   const id = context.params?.cokolwiek as string;
-  const tree = await ssg.trees.findOne.fetch({ link: id });
+  const tree = await ssg.example.trees.findOne.fetch({ link: id });
   console.log(tree);
   if (tree) {
     return {
