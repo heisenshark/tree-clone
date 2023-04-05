@@ -4,7 +4,7 @@ import {
 } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { api } from "~/utils/api";
 import { z } from "zod";
@@ -188,43 +188,185 @@ export default function Edit({
             {form2.formState.errors.link?.message}
           </span>
         </form>
-        {treeData?.map((n, index) => {
-          return (
-            <div
-              key={index}
-              className="my-4 rounded-xl border-2 bg-slate-600 p-4"
+        {treeData?.map((n, index) => (
+          <TreeElementCard key={index} element={n}>
+            <a
+              className="ml-auto cursor-pointer"
+              onClick={() => {
+                moveElement(index, -1);
+                console.log(treeData);
+              }}
             >
-              <div className="">{n.type}</div>
-
-              <input className="text-black" type="text" defaultValue={n.text} />
-              <span className="text-3xl">{" " + n.text}</span>
-              <div className="mr-2">
-                <a
-                  className="ml-auto cursor-pointer"
-                  onClick={() => moveElement(index, -1)}
-                >
-                  {" "}
-                  Up{" "}
-                </a>
-                <a
-                  className="ml-2 cursor-pointer"
-                  onClick={() => moveElement(index, 1)}
-                >
-                  {" "}
-                  Down{" "}
-                </a>
-                <a
-                  className="ml-2 cursor-pointer"
-                  onClick={() => deleteElement(index)}
-                >
-                  {" "}
-                  Delete{" "}
-                </a>
-              </div>
-            </div>
-          );
-        })}
+              Up
+            </a>
+            <a
+              className="ml-2 cursor-pointer"
+              onClick={() => moveElement(index, 1)}
+            >
+              Down
+            </a>
+            <a
+              className="ml-2 cursor-pointer"
+              onClick={() => deleteElement(index)}
+            >
+              Delete
+            </a>
+          </TreeElementCard>
+        ))}
       </div>
+    </div>
+  );
+}
+
+function TreeElementCard({
+  element,
+  children,
+}: {
+  element: ElementSchema;
+  children?: React.ReactNode;
+}) {
+  const [value, setValue] = useState({
+    text: element.text,
+    link: element.link,
+  });
+  const [edit, setEdit] = useState(false);
+  const headerInput = useRef(null);
+  return (
+    <div className="my-4 rounded-xl border-2 bg-slate-600 p-4">
+      <div className="">{element.type}</div>
+      <div className="grid grid-cols-1">
+        {!edit && (
+          <div className="col-start-1 row-start-1">
+            {element.text}
+            <a
+              onClick={() => {
+                setEdit((e) => !e);
+                setValue({ text: element.text, link: element.link });
+                headerInput.current.focus();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setEdit((e) => !e);
+                  setValue({ text: element.text, link: element.link });
+                  headerInput.current.focus();
+                }
+              }}
+              tabIndex={1}
+            >
+              {" "}
+              EDIT
+            </a>
+          </div>
+        )}
+
+        <input
+          className="col-start-1 row-start-1 w-full border-none bg-transparent font-bold text-white"
+          type="text"
+          value={edit ? value.text : element.text}
+          readOnly={!edit}
+          style={{
+            opacity: edit ? "100%" : "0%",
+            pointerEvents: edit ? "all" : "none",
+          }}
+          onInput={(e) => {
+            setValue({ ...value, text: e.currentTarget.value });
+            element.text = e.currentTarget.value;
+            console.log("typing...", element.text);
+          }}
+          onBlur={() => {
+            setEdit((e) => false);
+            setValue({ text: element.text, link: element.link });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setEdit((e) => false);
+              setValue({ text: element.text, link: element.link });
+            }
+          }}
+          ref={headerInput}
+        />
+      </div>
+      {element.type === "link" && (
+        <div>
+          <input
+            className="w-fit font-bold text-black read-only:bg-transparent read-only:text-white"
+            type="text"
+            readOnly={!edit}
+            value={edit ? value.link : element.link}
+            onInput={(e) => {
+              setValue({ ...value, link: e.currentTarget.value });
+              element.link = e.currentTarget.value;
+              console.log("typing...", element.text);
+            }}
+          />
+          <a
+            onClick={() => {
+              setEdit((e) => !e);
+              setValue({ text: element.text, link: element.link });
+            }}
+          >
+            {" "}
+            EDIT
+          </a>
+        </div>
+      )}{" "}
+      <div className="mr-2">
+        <div
+          onClick={() => {
+            setEdit((e) => false);
+            setValue({ text: element.text, link: element.link });
+          }}
+        >
+          {children && children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditableInput({ initialText, onTextChange }) {
+  const [edit, setEdit] = useState(false);
+  const [text, setText] = useState(initialText);
+  const inputRef = useRef(null);
+
+  const handleClick = () => {
+    setEdit(true);
+    inputRef.current.focus();
+  };
+
+  const handleBlur = () => {
+    setEdit(false);
+    onTextChange(text);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      setEdit(false);
+      onTextChange(text);
+    }
+  };
+
+  const handleInputChange = (event) => {
+    setText(event.target.value);
+  };
+
+  return (
+    <div>
+      {!edit ? (
+        <div>
+          {text} <button onClick={handleClick}>Edit</button>
+        </div>
+      ) : (
+        <input
+          type="text"
+          value={text}
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          ref={inputRef}
+        />
+      )}
     </div>
   );
 }
