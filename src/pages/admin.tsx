@@ -191,10 +191,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   const ssg = createProxySSGHelpers({
     router: appRouter,
-    ctx: { session, prisma },
+    ctx: { session, prisma, req: undefined, res: undefined },
     transformer: superjson,
   });
-  const trees = await ssg.example.trees.getUserTrees.prefetch({});
+  await ssg.example.trees.getUserTrees.prefetch({});
   return {
     props: {
       trpcState: ssg.dehydrate(),

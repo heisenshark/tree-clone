@@ -4,10 +4,10 @@ import {
 } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { api } from "~/utils/api";
-import { z } from "zod";
+import { z, ZodSchema } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "~/server/auth";
@@ -16,6 +16,7 @@ import { createProxySSGHelpers } from "@trpc/react-query/ssg";
 import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
 import superjson from "superjson";
+import { strict } from "assert";
 type ElementSchema = z.infer<typeof elementSchema>;
 export default function Edit({
   link,
@@ -61,6 +62,9 @@ export default function Edit({
     console.log(data);
     if (!edittedTree.data) return;
     if (!treeData) return;
+    // if (!arraySchema.safeParse(treeData).success) {
+    //   return;
+    // }
     if (data.type === "link" && data.link === undefined) return;
     treeData.push({ type: data.type, link: data.link ?? "", text: data.text });
     setTreeData([...treeData]);
@@ -100,7 +104,6 @@ export default function Edit({
     treeData.splice(index, 1);
     setTreeData([...treeData]);
   }
-
   // if (edittedTree.isLoading) return <div>Loading ...</div>;
   // if (edittedTree.isError || !edittedTree.data) return <div>Error</div>;
   return (
@@ -108,10 +111,9 @@ export default function Edit({
       <div className="max-w-2xl flex-auto">
         <Link
           href={`/${treeName}`}
-          className="text-2xl text-slate-300 underline hover:text-slate-400"
+          className="text-2xl font-bold text-white underline hover:text-slate-400"
         >
           Tree link: /{treeName}
-          {JSON.stringify(updateTree.error?.data?.zodError?.fieldErrors)}
         </Link>
         <form
           onSubmit={(e) => {
@@ -141,7 +143,7 @@ export default function Edit({
           </div>
           <span className="font-bold text-red-300">
             <span>{updateTree?.error?.message}</span>
-            {JSON.stringify(updateTree?.error?.data?.zodError?.fieldErrors)}
+            {}
           </span>
         </form>
         <form
@@ -225,121 +227,63 @@ function TreeElementCard({
   element: ElementSchema;
   children?: React.ReactNode;
 }) {
-  const [value, setValue] = useState({
-    text: element.text,
-    link: element.link,
-  });
-  const [edit, setEdit] = useState(false);
-  const headerInput = useRef(null);
   return (
-    <div className="my-4 rounded-xl border-2 bg-slate-600 p-4">
-      <div className="">{element.type}</div>
-      <div className="grid grid-cols-1">
-        {!edit && (
-          <div className="col-start-1 row-start-1">
-            {element.text}
-            <a
-              onClick={() => {
-                setEdit((e) => !e);
-                setValue({ text: element.text, link: element.link });
-                headerInput.current.focus();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setEdit((e) => !e);
-                  setValue({ text: element.text, link: element.link });
-                  headerInput.current.focus();
-                }
-              }}
-              tabIndex={1}
-            >
-              {" "}
-              EDIT
-            </a>
-          </div>
-        )}
-
-        <input
-          className="col-start-1 row-start-1 w-full border-none bg-transparent font-bold text-white"
-          type="text"
-          value={edit ? value.text : element.text}
-          readOnly={!edit}
-          style={{
-            opacity: edit ? "100%" : "0%",
-            pointerEvents: edit ? "all" : "none",
+    <div className="my-4 rounded-xl bg-slate-600 p-4 shadow-xl">
+      <div
+        className={
+          element.type === "header"
+            ? "[&>div>div]:flex [&>div>div]:justify-center [&>div>div]:gap-1 [&>div>input]:text-center [&button]:relative"
+            : ""
+        }
+      >
+        <EditableInput
+          initialText={element.text}
+          validator={z.string().min(1)}
+          onTextChange={(text) => {
+            element.text = text;
           }}
-          onInput={(e) => {
-            setValue({ ...value, text: e.currentTarget.value });
-            element.text = e.currentTarget.value;
-            console.log("typing...", element.text);
-          }}
-          onBlur={() => {
-            setEdit((e) => false);
-            setValue({ text: element.text, link: element.link });
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              setEdit((e) => false);
-              setValue({ text: element.text, link: element.link });
-            }
-          }}
-          ref={headerInput}
         />
       </div>
       {element.type === "link" && (
-        <div>
-          <input
-            className="w-fit font-bold text-black read-only:bg-transparent read-only:text-white"
-            type="text"
-            readOnly={!edit}
-            value={edit ? value.link : element.link}
-            onInput={(e) => {
-              setValue({ ...value, link: e.currentTarget.value });
-              element.link = e.currentTarget.value;
-              console.log("typing...", element.text);
-            }}
-          />
-          <a
-            onClick={() => {
-              setEdit((e) => !e);
-              setValue({ text: element.text, link: element.link });
-            }}
-          >
-            {" "}
-            EDIT
-          </a>
-        </div>
+        <EditableInput
+          initialText={element.link ?? ""}
+          validator={z.string().min(1).url()}
+          onTextChange={(text) => {
+            element.link = text;
+          }}
+        />
       )}{" "}
       <div className="mr-2">
-        <div
-          onClick={() => {
-            setEdit((e) => false);
-            setValue({ text: element.text, link: element.link });
-          }}
-        >
-          {children && children}
-        </div>
+        <div>{children && children}</div>
       </div>
     </div>
   );
 }
 
-function EditableInput({ initialText, onTextChange }) {
+function EditableInput({
+  initialText,
+  onTextChange,
+  validator,
+}: {
+  initialText: string;
+  onTextChange: (text: string) => void;
+  validator?: z.ZodString;
+}) {
+  const [isError, setIsError] = useState(false);
   const [edit, setEdit] = useState(false);
   const [text, setText] = useState(initialText);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleClick = () => {
-    setEdit(true);
-    inputRef.current.focus();
-  };
+  useEffect(() => {
+    setText(initialText);
+  }, [initialText]);
 
   const handleBlur = () => {
     setEdit(false);
     onTextChange(text);
   };
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       setEdit(false);
@@ -347,26 +291,48 @@ function EditableInput({ initialText, onTextChange }) {
     }
   };
 
-  const handleInputChange = (event) => {
-    setText(event.target.value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!validator) {
+      setText(e.target.value);
+      return;
+    }
+    const result = validator?.safeParse(e.target.value);
+    if (result?.success) {
+      setText(e.target.value);
+      setIsError(false);
+    } else {
+      setText(e.target.value);
+      setIsError(true);
+    }
+  };
+
+  const focusInput = () => {
+    setEdit(true);
+    inputRef.current?.focus();
   };
 
   return (
-    <div>
-      {!edit ? (
-        <div>
-          {text} <button onClick={handleClick}>Edit</button>
+    <div
+      className={`grid grid-cols-1 items-baseline ${
+        isError ? "text-red-600" : ""
+      }`}
+    >
+      {!edit && (
+        <div className={"col-start-1 row-start-1"} onClick={focusInput}>
+          {text} {isError && "!"} <button onClick={focusInput}>Edit</button>
         </div>
-      ) : (
-        <input
-          type="text"
-          value={text}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          ref={inputRef}
-        />
       )}
+      <input
+        className={`col-start-1 row-start-1 w-full ${
+          edit ? "bg-transparent" : "pointer-events-none opacity-0"
+        }`}
+        ref={inputRef}
+        type="text"
+        value={text}
+        onChange={handleInputChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+      />
     </div>
   );
 }
@@ -377,7 +343,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getServerSession(context.req, context.res, authOptions);
   const ssg = createProxySSGHelpers({
     router: appRouter,
-    ctx: { session, prisma },
+    ctx: { session, prisma, req: undefined, res: undefined },
     transformer: superjson,
   });
 
@@ -424,3 +390,5 @@ const elementSchema = z.object({
     .optional(),
   text: z.string().nonempty("Title must not be empty"),
 });
+
+const arraySchema = z.array(elementSchema);
