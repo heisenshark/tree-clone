@@ -17,6 +17,7 @@ import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
 import superjson from "superjson";
 import { strict } from "assert";
+import Head from "next/head";
 type ElementSchema = z.infer<typeof elementSchema>;
 export default function Edit({
   link,
@@ -106,121 +107,129 @@ export default function Edit({
   }
 
   return (
-    <div className="flex flex-1 justify-center bg-gray-700 p-4 text-white">
-      <div className="max-w-2xl flex-auto">
-        <Link
-          href={`/${treeName}`}
-          className="text-2xl font-bold text-white underline hover:text-slate-400"
-        >
-          Tree link: /{treeName}
-        </Link>
-        <form
-          onSubmit={(e) => {
-            handleSubmit(onSubmit)(e).catch(console.log);
-          }}
-          className="flex flex-col"
-        >
-          <label className="text-md" htmlFor="newLink">
-            Change url of tree
-          </label>
-          <div className="flex w-full">
-            <input
-              className="my-2 flex-auto rounded-md bg-white p-2 text-sm text-gray-900 invalid:bg-red-300"
-              type="text"
-              {...register("newLink", {
-                required: "required",
-                minLength: 4,
-              })}
-              defaultValue={treeName}
-            />
+    <>
+      <Head>
+        <title>{link} Edit</title>
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </Head>
 
-            <input
-              type="submit"
-              className="text-md my-2 ml-4 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
-              value="Update tree"
-            />
-          </div>
-          <span className="font-bold text-red-300">
-            <span>{updateTree?.error?.message}</span>
-          </span>
-        </form>
-        <form
-          className="flex flex-col"
-          onSubmit={(e) => {
-            form2.handleSubmit(onSubmit2)(e).catch(console.log);
-          }}
-        >
-          <h1>Add Element</h1>
-          <div className="flex flex-wrap gap-2">
-            <select
-              className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
-              {...form2.register("type")}
-              onChange={(e) => {
-                form2.setValue("type", e.target.value as "header" | "link");
-                console.log(e);
-              }}
-            >
-              <option value="header">header</option>
-              <option value="link">link</option>
-            </select>
-            <input
-              className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
-              type="text"
-              {...form2.register("text")}
-              placeholder="title"
-            />
-            {form2.watch("type") == "link" && (
+      <div className="flex flex-1 justify-center bg-gray-700 p-4 text-white">
+        <div className="max-w-2xl flex-auto">
+          <Link
+            href={`/${treeName}`}
+            className="text-2xl font-bold text-white underline hover:text-slate-400"
+          >
+            Tree link: /{treeName}
+          </Link>
+          <form
+            onSubmit={(e) => {
+              handleSubmit(onSubmit)(e).catch(console.log);
+            }}
+            className="flex flex-col"
+          >
+            <label className="text-md" htmlFor="newLink">
+              Change url of tree
+            </label>
+            <div className="flex w-full">
+              <input
+                className="my-2 flex-auto rounded-md bg-white p-2 text-sm text-gray-900 invalid:bg-red-300"
+                type="text"
+                {...register("newLink", {
+                  required: "required",
+                  minLength: 4,
+                })}
+                defaultValue={treeName}
+              />
+
+              <input
+                type="submit"
+                className="text-md my-2 ml-4 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
+                value="Update tree"
+              />
+            </div>
+            <span className="font-bold text-red-300">
+              <span>{updateTree?.error?.message}</span>
+            </span>
+          </form>
+          <form
+            className="flex flex-col"
+            onSubmit={(e) => {
+              form2.handleSubmit(onSubmit2)(e).catch(console.log);
+            }}
+          >
+            <h1>Add Element</h1>
+            <div className="flex flex-wrap gap-2">
+              <select
+                className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
+                {...form2.register("type")}
+                onChange={(e) => {
+                  form2.setValue("type", e.target.value as "header" | "link");
+                  console.log(e);
+                }}
+              >
+                <option value="header">header</option>
+                <option value="link">link</option>
+              </select>
               <input
                 className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
                 type="text"
-                placeholder="link"
-                {...form2.register("link")}
+                {...form2.register("text")}
+                placeholder="title"
               />
-            )}
-          </div>
-          <input
-            type="submit"
-            className="text-md my-2 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
-            value="Add Element"
-          />
-          <span className="font-bold text-red-300">
-            {form2.formState.errors.text && (
-              <span>
-                {form2.formState.errors.text?.message} <br />
-              </span>
-            )}
-            <span>{form2.formState.errors.link?.message}</span>
-          </span>
-        </form>
-        {treeData?.map((n, index) => (
-          <div className="text-xl" key={index}>
-            <TreeElementCard element={n}>
-              <a
-                className="ml-auto cursor-pointer text-sm"
-                onClick={() => {
-                  moveElement(index, -1);
-                  console.log(treeData);
-                }}
-              >
-                Up
-              </a>
-              <a
-                className="ml-2 cursor-pointer text-sm"
-                onClick={() => moveElement(index, 1)}
-              >
-                Down
-              </a>
-              <a
-                className="ml-2 cursor-pointer text-sm"
-                onClick={() => deleteElement(index)}
-              >
-                Delete
-              </a>
-            </TreeElementCard>
-          </div>
-        ))}
+              {form2.watch("type") == "link" && (
+                <input
+                  className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
+                  type="text"
+                  placeholder="link"
+                  {...form2.register("link")}
+                />
+              )}
+            </div>
+            <input
+              type="submit"
+              className="text-md my-2 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
+              value="Add Element"
+            />
+            <span className="font-bold text-red-300">
+              {form2.formState.errors.text && (
+                <span>
+                  {form2.formState.errors.text?.message} <br />
+                </span>
+              )}
+              <span>{form2.formState.errors.link?.message}</span>
+            </span>
+          </form>
+          {treeData?.map((n, index) => (
+            <div className="text-xl" key={index}>
+              <TreeElementCard element={n}>
+                <a
+                  className="ml-auto cursor-pointer text-sm hover:underline"
+                  onClick={() => {
+                    moveElement(index, -1);
+                    console.log(treeData);
+                  }}
+                >
+                  Up
+                </a>
+                <a
+                  className="ml-2 cursor-pointer text-sm hover:underline"
+                  onClick={() => moveElement(index, 1)}
+                >
+                  Down
+                </a>
+                <a
+                  className="ml-2 cursor-pointer text-sm hover:underline"
+                  onClick={() => deleteElement(index)}
+                >
+                  Delete
+                </a>
+              </TreeElementCard>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -232,14 +241,8 @@ function TreeElementCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="my-4 rounded-xl bg-white p-4 text-gray-900 shadow-xl">
-      <div
-        className={
-          element.type === "header"
-            ? "text-xl font-bold [&>div>div]:flex [&>div>div]:justify-center [&>div>div]:gap-1 [&>div>input]:text-center [&button]:relative"
-            : ""
-        }
-      >
+    <div className="my-4 rounded-xl bg-white p-6 text-gray-900 shadow-xl">
+      <div className={element.type === "header" ? "text-xl font-bold" : ""}>
         <EditableInput
           initialText={element.text}
           validator={z.string().min(1)}
@@ -323,7 +326,13 @@ function EditableInput({
     >
       {!edit && (
         <div className={"col-start-1 row-start-1"} onClick={focusInput}>
-          {text} {isError && "!"} <button onClick={focusInput}>Edit</button>
+          {text} {isError && "!"}{" "}
+          <button
+            className="text-base font-light hover:underline"
+            onClick={focusInput}
+          >
+            Edit
+          </button>
         </div>
       )}
       <input
