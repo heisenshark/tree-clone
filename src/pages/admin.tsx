@@ -143,7 +143,7 @@ const Admin = (
             return (
               <div
                 key={n.id}
-                className="my-2 flex rounded-md border-2 bg-slate-700 p-4 text-xl"
+                className="my-2 flex rounded-md bg-slate-700 p-4 text-xl shadow-xl"
               >
                 <div className="inline-flex text-3xl">{n.link}</div>
                 <Link
