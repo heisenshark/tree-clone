@@ -16,13 +16,13 @@ export default function TopBar() {
 
   if (arg !== "") return <></>;
   return (
-    <div className="flex items-center justify-center bg-red-100">
+    <div className="flex items-center justify-center">
       <div className="fixed flex w-full justify-center bg-white drop-shadow-xl">
         <div className="top-0 flex h-10 w-full max-w-5xl flex-row items-center justify-end bg-white">
           <Link className="mr-auto md:ml-4 " href="/">
             <h1 className="pl-4 text-2xl font-bold text-black drop-shadow-xl">
-              TR<span className="text-lime-900">EE</span> CLON
-              <span className="text-lime-900">E</span>
+              TR<span className="text-green-900">EE</span> CLON
+              <span className="text-green-900">E</span>
             </h1>
           </Link>
           {session.data?.user ? (

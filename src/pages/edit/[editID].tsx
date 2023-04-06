@@ -104,10 +104,9 @@ export default function Edit({
     treeData.splice(index, 1);
     setTreeData([...treeData]);
   }
-  // if (edittedTree.isLoading) return <div>Loading ...</div>;
-  // if (edittedTree.isError || !edittedTree.data) return <div>Error</div>;
+
   return (
-    <div className="flex flex-1 justify-center bg-gradient-to-t from-lime-900 to-lime-600 p-4 text-white">
+    <div className="flex flex-1 justify-center bg-gray-700 p-4 text-white">
       <div className="max-w-2xl flex-auto">
         <Link
           href={`/${treeName}`}
@@ -126,7 +125,7 @@ export default function Edit({
           </label>
           <div className="flex w-full">
             <input
-              className="my-2 flex-auto rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300 invalid:bg-red-300"
+              className="my-2 flex-auto rounded-md bg-white p-2 text-sm text-gray-900 invalid:bg-red-300"
               type="text"
               {...register("newLink", {
                 required: "required",
@@ -143,7 +142,6 @@ export default function Edit({
           </div>
           <span className="font-bold text-red-300">
             <span>{updateTree?.error?.message}</span>
-            {}
           </span>
         </form>
         <form
@@ -155,7 +153,7 @@ export default function Edit({
           <h1>Add Element</h1>
           <div className="flex flex-wrap gap-2">
             <select
-              className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
+              className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
               {...form2.register("type")}
               onChange={(e) => {
                 form2.setValue("type", e.target.value as "header" | "link");
@@ -166,14 +164,14 @@ export default function Edit({
               <option value="link">link</option>
             </select>
             <input
-              className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
+              className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
               type="text"
               {...form2.register("text")}
               placeholder="title"
             />
             {form2.watch("type") == "link" && (
               <input
-                className="my-2 max-w-fit rounded-md border-2 border-white bg-slate-600 p-2 text-sm text-slate-300"
+                className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
                 type="text"
                 placeholder="link"
                 {...form2.register("link")}
@@ -186,34 +184,40 @@ export default function Edit({
             value="Add Element"
           />
           <span className="font-bold text-red-300">
-            {form2.formState.errors.text?.message}
-            {form2.formState.errors.link?.message}
+            {form2.formState.errors.text && (
+              <span>
+                {form2.formState.errors.text?.message} <br />
+              </span>
+            )}
+            <span>{form2.formState.errors.link?.message}</span>
           </span>
         </form>
         {treeData?.map((n, index) => (
-          <TreeElementCard key={index} element={n}>
-            <a
-              className="ml-auto cursor-pointer"
-              onClick={() => {
-                moveElement(index, -1);
-                console.log(treeData);
-              }}
-            >
-              Up
-            </a>
-            <a
-              className="ml-2 cursor-pointer"
-              onClick={() => moveElement(index, 1)}
-            >
-              Down
-            </a>
-            <a
-              className="ml-2 cursor-pointer"
-              onClick={() => deleteElement(index)}
-            >
-              Delete
-            </a>
-          </TreeElementCard>
+          <div className="text-xl" key={index}>
+            <TreeElementCard element={n}>
+              <a
+                className="ml-auto cursor-pointer text-sm"
+                onClick={() => {
+                  moveElement(index, -1);
+                  console.log(treeData);
+                }}
+              >
+                Up
+              </a>
+              <a
+                className="ml-2 cursor-pointer text-sm"
+                onClick={() => moveElement(index, 1)}
+              >
+                Down
+              </a>
+              <a
+                className="ml-2 cursor-pointer text-sm"
+                onClick={() => deleteElement(index)}
+              >
+                Delete
+              </a>
+            </TreeElementCard>
+          </div>
         ))}
       </div>
     </div>
@@ -228,11 +232,11 @@ function TreeElementCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="my-4 rounded-xl bg-slate-600 p-4 shadow-xl">
+    <div className="my-4 rounded-xl bg-white p-4 text-gray-900 shadow-xl">
       <div
         className={
           element.type === "header"
-            ? "[&>div>div]:flex [&>div>div]:justify-center [&>div>div]:gap-1 [&>div>input]:text-center [&button]:relative"
+            ? "text-xl font-bold [&>div>div]:flex [&>div>div]:justify-center [&>div>div]:gap-1 [&>div>input]:text-center [&button]:relative"
             : ""
         }
       >

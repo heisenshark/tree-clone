@@ -77,7 +77,7 @@ const Admin = (
   }
 
   return (
-    <div className="flex flex-1 justify-center bg-lime-900 px-8 text-white">
+    <div className="flex flex-1 justify-center bg-gray-700 px-8 text-white">
       <div className="max-w-2xl flex-auto">
         <h1 className="my-4 text-3xl">Add tree</h1>
         <div className="mt-4">
@@ -91,7 +91,7 @@ const Admin = (
           >
             {/* register your input into the hook by invoking the "register" function */}
             <input
-              className="w-full rounded border border-gray-300 bg-white py-1 px-3 text-base leading-8 text-gray-700 outline-none transition-colors duration-200 ease-in-out  focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded border border-gray-300 bg-white py-1 px-3 text-base leading-8 text-gray-900 outline-none transition-colors duration-200 ease-in-out  focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
               placeholder="/link"
               required
               {...register("link")}
@@ -143,7 +143,7 @@ const Admin = (
             return (
               <div
                 key={n.id}
-                className="my-2 flex rounded-md bg-slate-700 p-4 text-xl shadow-xl"
+                className="my-2 flex rounded-md bg-white p-4 text-xl text-gray-900 shadow-xl"
               >
                 <div className="inline-flex text-3xl">{n.link}</div>
                 <Link

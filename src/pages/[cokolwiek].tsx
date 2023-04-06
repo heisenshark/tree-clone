@@ -12,6 +12,7 @@ import { prisma } from "~/server/db";
 import Image from "next/image";
 import { createTRPCContext } from "~/server/api/trpc";
 import { appRouter } from "~/server/api/root";
+import { TreeSchema } from "~/utils/types";
 
 export default function Something(
   props: InferGetServerSidePropsType<typeof getStaticProps>
