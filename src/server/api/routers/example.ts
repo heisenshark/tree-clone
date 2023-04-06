@@ -15,7 +15,7 @@ import { linkValidString, treeSchema, TreeSchema } from "~/utils/types"
 
 
 const reservedNames = ["admin", "about", "", "index", "trpc", "auth"];
-const treeRouter = createTRPCRouter({
+export const treeRouter = createTRPCRouter({
   addOne: protectedProcedure
     .input(
       z.object({ link: linkValidString.and(z.string()), content: z.string() })
@@ -87,15 +87,22 @@ const treeRouter = createTRPCRouter({
   getUserTrees: protectedProcedure
     .input(z.object({}))
     .query(({ ctx }) => {
-    console.log("siema");
-    
-    return ctx.prisma.tree.findMany({
+      // console.log(ctx);
+      console.log("eluwa");
+    const res =  ctx.prisma.tree.findMany({
+      select:{
+        link:true,
+        id:true,
+      },
       where: {
         userId: {
           equals: ctx.session.user.id,
         },
       },
     });
+    
+    // console.log(res, ctx,"==result");
+    return res;
   }),
   updateUserTree: protectedProcedure
     .input(
