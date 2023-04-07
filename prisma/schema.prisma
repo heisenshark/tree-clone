@@ -14,6 +14,7 @@ datasource db {
 model Tree {
     id        String   @id @default(cuid())
     content   String   @db.Text
+    style     String   @default("{}") @db.Text
     userId    String
     link      String   @unique
     createdAt DateTime @default(now())
