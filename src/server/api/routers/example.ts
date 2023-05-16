@@ -9,7 +9,7 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { parseTreeString } from "~/shared"
-import { linkValidString, treeSchema, TreeSchema, treeStylesSchema } from "~/utils/types"
+import { linkValidString, stylesFallback, treeSchema, TreeSchema, treeStylesSchema } from "~/utils/types"
 
 
 
@@ -43,6 +43,7 @@ export const treeRouter = createTRPCRouter({
           link: input.link,
           content: input.content,
           userId: ctx.session.user.id,
+          style:JSON.stringify(stylesFallback({})),
         },
       });
       await ctx.res?.revalidate(`/${input.link}`); 

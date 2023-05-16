@@ -18,12 +18,13 @@ export default function TopBar() {
   return (
     <div className="flex items-center justify-center">
       <div className="fixed flex w-full justify-center bg-white drop-shadow-xl">
-        <div className="top-0 flex h-10 w-full max-w-5xl flex-row items-center justify-end bg-white">
+        <div className="top-0 flex h-10 w-full max-w-[83rem] flex-row items-center justify-end bg-white">
           <Link className="mr-auto md:ml-4 " href="/">
-            <h1 className="pl-4 text-2xl font-bold text-black drop-shadow-xl">
-              TR<span className="text-green-900">EE</span> CLON
-              <span className="text-green-900">E</span>
+            <h1 className={`text-center whitespace-nowrap rounded-lg p-1 text-xl font-bold text-black drop-shadow-xl`}>
+              Tr<span className={`text-black`}>ee</span>Clon
+              <span className={`text-black`}>e</span>
             </h1>
+
           </Link>
           {session.data?.user ? (
             <>

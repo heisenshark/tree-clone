@@ -1,5 +1,5 @@
 import {
-  InferGetServerSidePropsType,
+  type InferGetServerSidePropsType,
   type GetServerSidePropsContext,
 } from "next";
 import Link from "next/link";
@@ -13,22 +13,21 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "~/server/auth";
 import {
   colorHexSchema,
-  TreeStylesSchema,
+  type TreeStylesSchema,
   type TreeSchema,
+  type treeStyles,
 } from "~/utils/types";
 import { createProxySSGHelpers } from "@trpc/react-query/ssg";
 import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
 import superjson from "superjson";
-import { strict } from "assert";
 import Head from "next/head";
 import * as Tabs from "@radix-ui/react-tabs";
 import EditableInput from "~/components/EditableInput";
 import TreeView from "~/components/TreeView";
-import { log } from "console";
 import { atom } from "jotai";
 import { useAtom, useSetAtom } from "jotai/react";
-
+import {stylesFallback} from "~/utils/types";
 type ElementSchema = z.infer<typeof elementSchema>;
 
 const treeAtom = atom<TreeSchema>([]);
@@ -50,8 +49,11 @@ export default function Edit({
       },
     }
   );
+
   const [treeStyles, setTreeStyles] = useState<TreeStylesSchema>(
-    edittedTree?.data?.style ?? {}
+    {
+      ...stylesFallback(edittedTree?.data?.style ?? {})
+    }
   );
   const updateTree = api.example.trees.updateUserTree.useMutation({
     onSuccess: async (data, variables, context) => {
@@ -67,6 +69,9 @@ export default function Edit({
     console.log("ading");
     if (!edittedTree.data) return;
     console.log("there was data");
+    if (!treeStyles.bgType) treeStyles.bgType = "color";
+
+
     updateTree.mutate({
       link: edittedTree.data?.link,
       newLink: data.newLink,
@@ -78,9 +83,6 @@ export default function Edit({
     console.log(data);
     if (!edittedTree.data) return;
     if (!treeData) return;
-    // if (!arraySchema.safeParse(treeData).success) {
-    //   return;
-    // }
     if (data.type === "link" && data.link === undefined) return;
     treeData.push({ type: data.type, link: data.link ?? "", text: data.text });
     setTreeData([...treeData]);
@@ -120,7 +122,6 @@ export default function Edit({
     treeData.splice(index, 1);
     setTreeData([...treeData]);
   }
-
   console.log(treeData);
   return (
     <>
@@ -130,9 +131,9 @@ export default function Edit({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
-      <div className="flex flex-1 justify-center bg-gray-700 p-4 text-white md:mr-96">
-        <div className="flex max-w-2xl flex-auto flex-row flex-wrap">
-          <Tabs.Root className="flex-1" defaultValue="content">
+      <div className="flex flex-1 justify-center bg-gray-700 p-4 text-white">
+        <div className="flex w-[80em] flex-row justify-center">
+          <Tabs.Root className="flex-auto flex flex-col min-w-[60%]" defaultValue="content">
             <Tabs.List
               className="flex shrink-0 border-b border-mauve6"
               aria-label="Manage your account"
@@ -150,13 +151,7 @@ export default function Edit({
                 Appearance
               </Tabs.Trigger>
             </Tabs.List>
-            <Tabs.Content value="content">
-              <Link
-                href={`/${treeName}`}
-                className="text-2xl font-bold text-white underline hover:text-slate-400"
-              >
-                Tree link: /{treeName}
-              </Link>
+            <Tabs.Content className="overflow-y-scroll h-[85vh] px-2" value="content">
               <form
                 onSubmit={(e) => {
                   handleSubmit(onSubmit)(e).catch(console.log);
@@ -164,7 +159,7 @@ export default function Edit({
                 className="flex flex-col"
               >
                 <label className="text-md" htmlFor="newLink">
-                  Change url of tree
+                  Tree Url
                 </label>
                 <div className="flex w-full">
                   <input
@@ -194,7 +189,7 @@ export default function Edit({
                 }}
               >
                 <h1>Add Element</h1>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 flex-grow-0">
                   <select
                     className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
                     {...form2.register("type")}
@@ -266,12 +261,11 @@ export default function Edit({
                 </div>
               ))}
             </Tabs.Content>
-            <Tabs.Content value="Appearance">
-              <div className="flex flex-col">
-                <label className="text-md" htmlFor="newLink">
-                  Change background color
-                </label>
+            <Tabs.Content className="overflow-y-scroll h-[85vh] px-2" value="Appearance">
+              <div className="flex w-96 max-w-2xl flex-col">
                 <div className="flex flex-col">
+                <h1 className="text-xl my-4">Tree Style</h1>
+                <label htmlFor="">background color</label>
                   <ColorInput
                     initialColor={treeStyles.backgroundColor ?? "#ffffff"}
                     onColorChange={(color) => {
@@ -279,30 +273,155 @@ export default function Edit({
                       setTreeStyles({
                         ...treeStyles,
                         backgroundColor: color,
+                        bgType: "color",
                       });
                     }}
                   ></ColorInput>
-                  <input
-                    type="submit"
-                    className="text-md my-2 ml-4 max-w-fit cursor-pointer rounded-md bg-red-500 p-2"
-                    value="Update tree"
-                  />
+                  <h1 className="text-xl">Gradient</h1>
+                  <label htmlFor="">From color</label>
+                  <ColorInput
+                    initialColor={treeStyles.gradient?.from ?? "#ffffff"}
+                    onColorChange={(color) => {
+                      console.log(color);
+                      if (treeStyles.gradient) treeStyles.gradient.from = color;
+                      else treeStyles.gradient = { from: color, to: color };
+                      setTreeStyles({
+                        ...treeStyles,
+                        bgType: "gradient",
+                      });
+                    }}
+                  ></ColorInput>
+                  <label htmlFor="">To color</label>
+                  <ColorInput
+                    initialColor={treeStyles.gradient?.to ?? "#ffffff"}
+                    onColorChange={(color) => {
+                      console.log(color);
+                      if (treeStyles.gradient) treeStyles.gradient.to = color;
+                      else treeStyles.gradient = { from: color, to: color };
+                      setTreeStyles({
+                        ...treeStyles,
+                        bgType: "gradient",
+                      });
+                    }}
+                  ></ColorInput>
+                  <label htmlFor="">Text color</label>
+                  <ColorInput
+                    initialColor={treeStyles.textColor ?? "#000000"}
+                    onColorChange={(color) => {
+                      setTreeStyles({
+                        ...treeStyles,
+                        textColor: color,
+                      });
+                    }}
+                  ></ColorInput>
+                  <h1 className="text-xl my-4">Button Style</h1>
+                  <label htmlFor="">text color</label>
+                  <ColorInput
+                    initialColor={
+                      treeStyles.buttonStyle?.textColor ?? "#ffffff"
+                    }
+                    onColorChange={(color) => {
+                      treeStyles.buttonStyle.textColor = color;
+                      setTreeStyles({
+                        ...treeStyles,
+                      });
+                    }}
+                  ></ColorInput>
+                  <label htmlFor="">color</label>
+                  <ColorInput
+                    initialColor={
+                      treeStyles.buttonStyle?.buttonColor ?? "#ffffff"
+                    }
+                    onColorChange={(color) => {
+                      treeStyles.buttonStyle.buttonColor = color;
+                      setTreeStyles({
+                        ...treeStyles,
+                      });
+                    }}
+                  ></ColorInput>
+                  <label htmlFor="">shadow color</label>
+                  <ColorInput
+                    initialColor={
+                      treeStyles.buttonStyle?.shadowColor ?? "#ffffff"
+                    }
+                    onColorChange={(color) => {
+                      treeStyles.buttonStyle.shadowColor = color;
+                      setTreeStyles({
+                        ...treeStyles,
+                      });
+                    }}
+                  ></ColorInput>
+                  <label htmlFor="">Shadow shape</label>
+                  <select
+                    className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
+                    onChange={(e) => {
+                      treeStyles.buttonStyle.shadow = e.target.value as NonNullable<treeStyles['buttonStyle']>["shadow"];
+                      setTreeStyles({
+                        ...treeStyles,
+                      });
+                    }}
+                  >
+                    <option value="none">none</option>
+                    <option value="soft">soft</option>
+                    <option value="hard">hard</option>
+                  </select>
+                  <label htmlFor="">Roundness</label>
+                  <select
+                    className="my-2 max-w-fit rounded-md bg-white p-2 text-sm text-gray-900"
+                    onChange={(e) => {
+                      treeStyles.buttonStyle.roundness = e.target.value as NonNullable<treeStyles['buttonStyle']>["roundness"];
+                      setTreeStyles({
+                        ...treeStyles,
+                      });
+                    }}
+                  >
+                    <option value="none">none</option>
+                    <option value="medium">medium</option>
+                    <option value="full">full</option>
+                  </select>
+
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-5 w-5 rounded-full text-indigo-600 transition duration-150 ease-in-out"
+                      checked={treeStyles.buttonStyle.outline}
+                      onChange={(e) => {
+                        treeStyles.buttonStyle.outline = e.target.checked;
+                        setTreeStyles({
+                          ...treeStyles,
+                        });
+                      }}
+                    />
+                    <span className="ml-2 text-white">only outline?</span>
+                  </label>
                 </div>
               </div>
             </Tabs.Content>
           </Tabs.Root>
-          <div className="fixed right-0 top-0 flex h-full w-80 flex-initial flex-grow-0 items-center justify-center lg:w-96 mmd:hidden">
-            <div
-              className="aspect-[1/2] max-h-[100vh] scale-75 overflow-hidden rounded-[3em] border-[1em] border-black p-4"
-              style={{
-                backgroundColor: treeStyles.backgroundColor,
-              }}
-            >
-              <TreeView
-                himassage="AAAAAA"
-                tree={treeData}
-                styles={treeStyles}
-              ></TreeView>
+          <div className="flex-grow-1 flex h-full flex-auto flex-col items-center mmd:hidden">
+            <div className="">
+              <div
+                className="flex aspect-[1/2] h-[85vh] justify-center overflow-hidden rounded-[3em] border-[1em] border-black p-4 text-[1rem] transition-all duration-1000"
+                style={{
+                  //`linear-gradient(0deg, black 0%, white 100%)`,
+                  background:
+                    treeStyles.bgType == "gradient"
+                      ? `linear-gradient(${0}deg, ${
+                          treeStyles.gradient?.to ?? "black"
+                        }, ${treeStyles.gradient?.from ?? "white"} )`
+                      : treeStyles.backgroundColor ?? "#fff",
+                }}
+              >
+                <TreeView tree={treeData} styles={treeStyles}></TreeView>
+              </div>
+              <div className="flex flex-auto justify-center text-center py-1">
+                <Link
+                  href={`/${treeName}`}
+                  className="text-2xl font-bold text-black underline hover:text-slate-400"
+                >
+                  Tree link: /{treeName}
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -361,7 +480,7 @@ function ColorInput({
       <div className="flex rounded-full bg-white ring-black active:ring-2">
         <input
           type="color"
-          className="h-10 w-10 flex-initial rounded-xl shadow-inner transition-all [clip-path:circle(35%)] hover:[clip-path:circle(40%)] focus:ring-2 active:[clip-path:circle(39%)]"
+          className="relative h-10 w-10 flex-initial rounded-xl tracking-widest shadow-inner transition-all [clip-path:circle(35%)] hover:[clip-path:circle(40%)] focus:ring-2 active:[clip-path:circle(39%)]"
           value={color}
           onChange={(e) => {
             setColor(e.target.value);
@@ -437,3 +556,4 @@ const elementSchema = z.object({
 });
 
 const arraySchema = z.array(elementSchema);
+

@@ -20,6 +20,25 @@ export default function Something(
   props: InferGetServerSidePropsType<typeof getStaticProps>
 ) {
   const { tree, styles } = props;
+  let bg = "";
+  let footColor = "";
+  switch (styles.bgType) {
+    case "color":
+      bg = styles?.backgroundColor ?? "lime";
+      footColor = getTextColorBasedOnBackground(bg);
+      break;
+    case "gradient":
+      bg = `linear-gradient(${0}deg, ${styles.gradient?.to ?? "black"},${
+        styles.gradient?.from ?? "white"
+      })`;
+      footColor = getTextColorBasedOnBackground(styles.gradient?.to ?? "black");
+      break;
+    default:
+      bg = "white";
+      break;
+  }
+
+
   return (
     <>
       <Head>
@@ -29,26 +48,18 @@ export default function Something(
       <div
         className="flex flex-1 flex-col items-center justify-center px-8"
         style={{
-          backgroundColor: styles.backgroundColor ?? "lime",
+          background: bg,
         }}
       >
-        <Image
-          width={128}
-          height={128}
-          className="mt-8 w-32 cursor-pointer rounded-full border-4 shadow-md shadow-stone-500"
-          src={props.userImg ?? ""}
-          alt="user image"
-        />
-
         <TreeView tree={tree} styles={styles}></TreeView>
-        <footer className="flex-0 mt-auto w-full pt-10 pb-4">
+        <footer className="flex flex-0 items-center justify-center mt-auto w-full pt-10 pb-4">
           <Link
-            className="flex-0 mr-auto flex items-center justify-center"
+            className=" flex-0 flex-row"
             href="/"
           >
-            <h1 className="max-w-min whitespace-nowrap rounded-lg  p-1 text-xl font-bold text-black drop-shadow-xl">
-              TR<span className="text-lime-700">EE</span> CLON
-              <span className="text-lime-700">E</span>
+            <h1 className={`text-center whitespace-nowrap rounded-lg p-1 text-xl font-bold text-${footColor} drop-shadow-xl`}>
+              Tr<span className={`text-${footColor}`}>ee</span> Clon
+              <span className={`text-${footColor}`}>e</span>
             </h1>
           </Link>
         </footer>
@@ -94,3 +105,12 @@ export const getStaticPaths: GetStaticPaths = async () => {
   }));
   return { paths, fallback: "blocking" };
 };
+
+function getTextColorBasedOnBackground(backgroundColor:string) {
+  const cleanColor = backgroundColor.replace('#', '');
+  const r = parseInt(cleanColor.substring(0, 2), 16);
+  const g = parseInt(cleanColor.substring(2, 4), 16);
+  const b = parseInt(cleanColor.substring(4, 6), 16);
+  const brightness = Math.round((r * 299 + g * 587 + b * 114) / 1000);
+  return brightness > 125 ? 'black' : 'white';
+}

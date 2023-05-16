@@ -65,6 +65,7 @@ const Admin = (
     const xd = add.mutate({
       link: data.link,
       content: "[]",
+        
     });
     console.log(xd);
   };
