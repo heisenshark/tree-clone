@@ -15,29 +15,34 @@ import { appRouter } from "~/server/api/root";
 import { TreeSchema, TreeStylesSchema } from "~/utils/types";
 import Head from "next/head";
 import TreeView from "~/components/TreeView";
+import { resolveBackground } from "~/components/TreeView";
 
 export default function Something(
   props: InferGetServerSidePropsType<typeof getStaticProps>
 ) {
   const { tree, styles } = props;
-  let bg = "";
-  let footColor = "";
-  switch (styles.bgType) {
-    case "color":
-      bg = styles?.backgroundColor ?? "lime";
-      footColor = getTextColorBasedOnBackground(bg);
-      break;
-    case "gradient":
-      bg = `linear-gradient(${0}deg, ${styles.gradient?.to ?? "black"},${
-        styles.gradient?.from ?? "white"
-      })`;
-      footColor = getTextColorBasedOnBackground(styles.gradient?.to ?? "black");
-      break;
-    default:
-      bg = "white";
-      break;
-  }
+  // let bg = "";
+  // let footColor = "";
+  // switch (styles.bgType) {
+  //   case "color":
+  //     bg = styles?.backgroundColor ?? "lime";
+  //     footColor = getTextColorBasedOnBackground(bg);
+  //     break;
+  //   case "gradient":
+  //     bg = `linear-gradient(${0}deg, ${styles.gradient?.to ?? "black"},${
+  //       styles.gradient?.from ?? "white"
+  //     })`;
+  //     footColor = getTextColorBasedOnBackground(styles.gradient?.to ?? "black");
+  //     break;
+  //   case "wave":
+  //     bg = "url(/wave.svg)";
+  //     break;
+  //   default:
+  //     bg = "white";
+  //     break;
+  // }
 
+  const [bg, footColor] = resolveBackground(styles);
 
   return (
     <>
@@ -52,12 +57,11 @@ export default function Something(
         }}
       >
         <TreeView tree={tree} styles={styles}></TreeView>
-        <footer className="flex flex-0 items-center justify-center mt-auto w-full pt-10 pb-4">
-          <Link
-            className=" flex-0 flex-row"
-            href="/"
-          >
-            <h1 className={`text-center whitespace-nowrap rounded-lg p-1 text-xl font-bold text-${footColor} drop-shadow-xl`}>
+        <footer className="flex-0 mt-auto flex w-full items-center justify-center pt-10 pb-4">
+          <Link className=" flex-0 flex-row" href="/">
+            <h1
+              className={`whitespace-nowrap rounded-lg p-1 text-center text-xl font-bold text-${footColor} drop-shadow-xl`}
+            >
               Tr<span className={`text-${footColor}`}>ee</span> Clon
               <span className={`text-${footColor}`}>e</span>
             </h1>
@@ -105,12 +109,3 @@ export const getStaticPaths: GetStaticPaths = async () => {
   }));
   return { paths, fallback: "blocking" };
 };
-
-function getTextColorBasedOnBackground(backgroundColor:string) {
-  const cleanColor = backgroundColor.replace('#', '');
-  const r = parseInt(cleanColor.substring(0, 2), 16);
-  const g = parseInt(cleanColor.substring(2, 4), 16);
-  const b = parseInt(cleanColor.substring(4, 6), 16);
-  const brightness = Math.round((r * 299 + g * 587 + b * 114) / 1000);
-  return brightness > 125 ? 'black' : 'white';
-}
