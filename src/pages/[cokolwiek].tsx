@@ -20,28 +20,7 @@ import { resolveBackground } from "~/components/TreeView";
 export default function Something(
   props: InferGetServerSidePropsType<typeof getStaticProps>
 ) {
-  const { tree, styles } = props;
-  // let bg = "";
-  // let footColor = "";
-  // switch (styles.bgType) {
-  //   case "color":
-  //     bg = styles?.backgroundColor ?? "lime";
-  //     footColor = getTextColorBasedOnBackground(bg);
-  //     break;
-  //   case "gradient":
-  //     bg = `linear-gradient(${0}deg, ${styles.gradient?.to ?? "black"},${
-  //       styles.gradient?.from ?? "white"
-  //     })`;
-  //     footColor = getTextColorBasedOnBackground(styles.gradient?.to ?? "black");
-  //     break;
-  //   case "wave":
-  //     bg = "url(/wave.svg)";
-  //     break;
-  //   default:
-  //     bg = "white";
-  //     break;
-  // }
-
+  const { tree, styles, userImg } = props;
   const [bg, footColor] = resolveBackground(styles);
 
   return (
@@ -56,7 +35,11 @@ export default function Something(
           background: bg,
         }}
       >
-        <TreeView tree={tree} styles={styles}></TreeView>
+        <TreeView
+          tree={tree}
+          styles={styles}
+          userImg={userImg ?? ""}
+        ></TreeView>
         <footer className="flex-0 mt-auto flex w-full items-center justify-center pt-10 pb-4">
           <Link className=" flex-0 flex-row" href="/">
             <h1

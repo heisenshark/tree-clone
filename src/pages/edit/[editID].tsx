@@ -30,14 +30,19 @@ import { useAtom, useSetAtom } from "jotai/react";
 import { stylesFallback } from "~/utils/types";
 import Wave, { waveSvg } from "~/components/svgs/Wave";
 import { resolveBackground } from "~/components/TreeView";
+import { useHydrate } from "@tanstack/react-query";
+import { useHydrateAtoms } from "jotai/utils";
+
 type ElementSchema = z.infer<typeof elementSchema>;
 
 const treeAtom = atom<TreeSchema>([]);
 export default function Edit({
   link,
+  treeProp,
   trpcState,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const router = useRouter();
+  useHydrateAtoms([[treeAtom, treeProp]]);
   const [treeName, setTreeName] = useState(link);
   const [treeData, setTreeData] = useAtom(treeAtom);
   const edittedTree = api.example.trees.findOne.useQuery(
@@ -45,13 +50,9 @@ export default function Edit({
       link: treeName,
     },
     {
-      refetchOnWindowFocus: false,
-      onSuccess(data) {
-        setTreeData(data?.content ?? []);
-      },
+      enabled: false,
     }
   );
-
   const [treeStyles, setTreeStyles] = useState<TreeStylesSchema>({
     ...stylesFallback(edittedTree?.data?.style ?? {}),
   });
@@ -121,8 +122,9 @@ export default function Edit({
     treeData.splice(index, 1);
     setTreeData([...treeData]);
   }
-  console.log(treeData);
+  console.log(treeData, trpcState, 11);
   const [bg, footColor] = resolveBackground(treeStyles);
+
   return (
     <>
       <Head>
@@ -449,7 +451,11 @@ export default function Edit({
                   background: bg,
                 }}
               >
-                <TreeView tree={treeData} styles={treeStyles}></TreeView>
+                <TreeView
+                  tree={treeData}
+                  styles={treeStyles}
+                  userImg={edittedTree.data?.image ?? ""}
+                ></TreeView>
               </div>
               <div className="flex flex-auto justify-center py-1 text-center">
                 <Link
@@ -548,7 +554,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     transformer: superjson,
   });
 
-  await ssg.example.trees.findOne.prefetch({
+  const treeProp = await ssg.example.trees.findOne.fetch({
     link: context.params?.editID as string,
   });
 
@@ -560,13 +566,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       },
     };
   }
-  return {
-    props: {
-      link: context.params?.editID as string,
-      trpcState: ssg.dehydrate(),
-      session: await getServerSession(context.req, context.res, authOptions),
-    },
-  };
+  if (treeProp)
+    return {
+      props: {
+        treeProp: treeProp.content,
+        link: context.params?.editID as string,
+        trpcState: ssg.dehydrate(),
+        session: await getServerSession(context.req, context.res, authOptions),
+      },
+    };
 }
 
 const inputsSchema = z.object({
