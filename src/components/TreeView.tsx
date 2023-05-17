@@ -5,9 +5,11 @@ import { useSession } from "next-auth/react";
 function TreeView({
   tree,
   styles,
+  userImg,
 }: {
   tree: TreeSchema;
   styles: TreeStylesSchema;
+  userImg:string;
 }) {
   console.log(tree, styles);
   const session = useSession();
@@ -69,7 +71,7 @@ function TreeView({
           width={128}
           height={128}
           className="mt-8 w-[8em] cursor-pointer rounded-full border-4 border-gray-900 bg-stone-500 shadow-md"
-          src={session?.data?.user.image ?? ""}
+          src={userImg ?? ""}
           alt="user image"
         />
         {tree.map((n, index) => {
