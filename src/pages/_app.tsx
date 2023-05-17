@@ -5,6 +5,7 @@ import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
 import TopBar from "~/components/topbar";
+import { Provider } from "jotai";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -12,10 +13,12 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-      <div className="flex h-screen flex-col">
-        <TopBar></TopBar>
-        <Component {...pageProps} />
-      </div>
+      <Provider>
+        <div className="flex h-screen flex-col">
+          <TopBar></TopBar>
+          <Component {...pageProps} />
+        </div>
+      </Provider>
     </SessionProvider>
   );
 };

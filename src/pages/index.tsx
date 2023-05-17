@@ -36,14 +36,14 @@ const Home: NextPage = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8 ">
+        <div className="px-4 py-6 sm:px-0 ">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8">
               <h2 className="text-2xl font-bold leading-tight text-gray-900">
                 Features
               </h2>
-              <p className="mt-2 text-gray-500">With Social Links, you can:</p>
+              <p className="mt-2 text-gray-500">With tree links, you can:</p>
             </div>
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <li className="rounded-lg bg-white shadow">
@@ -110,7 +110,7 @@ const Home: NextPage = () => {
       </main>
       <footer className="bg-white shadow">
         <div className="mx-auto max-w-7xl py-8 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-gray-500">&copy; 2023 Tree Clone.</p>
+          <p className="text-center text-gray-500">Tree Clone. 2023</p>
         </div>
       </footer>
     </>

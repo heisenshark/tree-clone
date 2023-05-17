@@ -1,7 +1,6 @@
 import { prisma } from "./../../db";
 import { Prisma, PrismaClient, Tree } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
-import { log } from "console"
 import { z } from "zod";
 
 import {
@@ -10,7 +9,7 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { parseTreeString } from "~/shared"
-import { linkValidString, treeSchema, TreeSchema } from "~/utils/types"
+import { linkValidString, stylesFallback, treeSchema, TreeSchema, treeStylesSchema } from "~/utils/types"
 
 
 
@@ -44,6 +43,7 @@ export const treeRouter = createTRPCRouter({
           link: input.link,
           content: input.content,
           userId: ctx.session.user.id,
+          style:JSON.stringify(stylesFallback({})),
         },
       });
       await ctx.res?.revalidate(`/${input.link}`); 
@@ -60,7 +60,19 @@ export const treeRouter = createTRPCRouter({
         },
       });
       if(!res)return undefined;
-      const content = {...res, content: JSON.parse(res.content) as TreeSchema};
+      let style;
+      try{
+        style = treeStylesSchema.parse(JSON.parse(res.style));
+      }
+      catch(e){
+        console.log(e);
+        throw new TRPCError({
+          message: "Tree styles are not valid",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+      const content = {...res, content: JSON.parse(res.content) as TreeSchema, style: style};
+
       const user = await ctx.prisma.user.findFirst({
         where: {
           id: {
@@ -106,7 +118,7 @@ export const treeRouter = createTRPCRouter({
   }),
   updateUserTree: protectedProcedure
     .input(
-      z.object({ link: linkValidString.and(z.string()), newContent: treeSchema, newLink:linkValidString.and(z.string()) })
+      z.object({ link: linkValidString.and(z.string()), newContent: treeSchema, newStyles: treeStylesSchema, newLink:linkValidString.and(z.string()) })
     )
     .mutation(async ({ ctx, input }) => {
       const tree = await ctx.prisma.tree.findFirst({
@@ -118,11 +130,11 @@ export const treeRouter = createTRPCRouter({
       });
       if (!tree) throw new TRPCError({ code:"BAD_REQUEST",message:"tree does not exist"});
       if (tree.userId!= ctx.session.user.id) throw new TRPCError({ code:"UNAUTHORIZED",message:"tree is not owned by current user"});
-
       if(input.newLink!=input.link && await findTree(input.newLink, ctx.prisma)) throw new TRPCError({ code:"BAD_REQUEST",message:"new name is already in use."});
-
+      if(treeStylesSchema.safeParse(input.newStyles).success==false) throw new TRPCError({ code:"BAD_REQUEST",message:"new styles are not valid."});
+      tree.style = JSON.stringify(input.newStyles);
       tree.content = JSON.stringify(input.newContent);
-      tree.link = input.newLink;
+      tree.link = input.newLink;1
       const res = await ctx.prisma.tree.update(
         {
           where: {

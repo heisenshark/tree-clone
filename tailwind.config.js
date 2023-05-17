@@ -24,7 +24,6 @@ const config = {
         'msm': { 'max': '639px' },
       },
 
-
       keyframes: {
         wave: {
           '0%': { transform: 'rotate(0.0deg)' },
